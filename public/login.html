@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2E1F17">
+<title>Ingresar — Fábrica de Pastas</title>
+<link rel="stylesheet" href="/styles.css">
+<style>
+  body{ display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+  .login{ width:100%; max-width:380px; }
+  .login .panel{ padding:26px; }
+  .login h1{ text-align:center; margin-bottom:6px; }
+  .login p.sub{ text-align:center; color:var(--tinta-suave); margin:0 0 20px; }
+  .login .error{ color:var(--tomate); font-weight:700; min-height:24px; margin-top:4px; }
+</style>
+</head>
+<body>
+  <div class="login">
+    <div class="panel">
+      <h1>Fábrica de Pastas</h1>
+      <p class="sub">Ingresá para continuar</p>
+      <div class="campo">
+        <label for="u">Usuario</label>
+        <input id="u" autocomplete="username" autocapitalize="none" autocorrect="off">
+      </div>
+      <div class="campo">
+        <label for="p">Contraseña</label>
+        <input id="p" type="password" autocomplete="current-password">
+      </div>
+      <div class="error" id="err"></div>
+      <button class="btn btn-primario btn-grande" id="entrar">Entrar</button>
+    </div>
+  </div>
+  <script>
+    const u = document.getElementById('u'), p = document.getElementById('p');
+    const err = document.getElementById('err'), btn = document.getElementById('entrar');
+    async function entrar() {
+      err.textContent = '';
+      btn.disabled = true;
+      try {
+        const r = await fetch('/api/login', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usuario: u.value.trim(), contraseña: p.value })
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || 'No se pudo ingresar');
+        location.href = '/';
+      } catch (e) {
+        err.textContent = e.message;
+        btn.disabled = false;
+      }
+    }
+    btn.addEventListener('click', entrar);
+    p.addEventListener('keydown', (e) => { if (e.key === 'Enter') entrar(); });
+    u.addEventListener('keydown', (e) => { if (e.key === 'Enter') p.focus(); });
+    u.focus();
+  </script>
+</body>
+</html>

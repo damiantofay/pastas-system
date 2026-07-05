@@ -1,0 +1,21 @@
+{
+  "name": "fabrica-pastas",
+  "version": "1.0.0",
+  "description": "Sistema de gestion para fabrica de pastas familiar (MVP nucleo operativo)",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed": "node db.js --seed"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^11.8.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
