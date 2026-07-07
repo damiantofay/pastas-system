@@ -163,8 +163,14 @@ app.post('/api/compras', h((req, res) => {
 // PRODUCTOS  (con costo y margen calculados)
 // =====================================================================
 function productoConCosto(p, ohPorMin, costoHora) {
-  const c = D.costoProducto(p.id, { overheadPorMinuto: ohPorMin, costoHora });
-  const costo = c ? c.total : 0;
+  let costo, c;
+  if (p.tipo === 'reventa') {
+    costo = p.costo_compra || 0;
+    c = null;
+  } else {
+    c = D.costoProducto(p.id, { overheadPorMinuto: ohPorMin, costoHora });
+    costo = c ? c.total : 0;
+  }
   // precio de referencia para el margen: el primero habilitado
   let precioRef = 0, baseRef = '';
   if (p.vende_unidad && p.precio_unidad > 0) { precioRef = p.precio_unidad; baseRef = 'unidad'; }
@@ -210,6 +216,8 @@ function leerProductoBody(b, cur = {}) {
     nombre: (b.nombre != null ? String(b.nombre) : cur.nombre || '').trim(),
     categoria: (b.categoria != null ? String(b.categoria) : cur.categoria || 'General').trim() || 'General',
     unidad_stock: ['unidad', 'kg'].includes(b.unidad_stock) ? b.unidad_stock : (cur.unidad_stock || 'unidad'),
+    tipo: ['elaborado', 'reventa'].includes(b.tipo) ? b.tipo : (cur.tipo || 'elaborado'),
+    codigo_barra: b.codigo_barra != null ? (String(b.codigo_barra).trim() || null) : (cur.codigo_barra ?? null),
     minutos_mano_obra: b.minutos_mano_obra != null ? num(b.minutos_mano_obra) : (cur.minutos_mano_obra || 0),
     precio_unidad: b.precio_unidad != null ? num(b.precio_unidad) : (cur.precio_unidad || 0),
     precio_docena: b.precio_docena != null ? num(b.precio_docena) : (cur.precio_docena || 0),
@@ -221,14 +229,24 @@ function leerProductoBody(b, cur = {}) {
   };
 }
 
+function chequearCodigoUnico(codigo, sucursalId, excluirId) {
+  if (!codigo) return;
+  const fila = db.prepare(
+    'SELECT id, nombre FROM producto WHERE codigo_barra = ? AND sucursal_id = ? AND id != ?'
+  ).get(codigo, sucursalId, excluirId || 0);
+  if (fila) throw new Error(`Ese código ya está asignado a "${fila.nombre}"`);
+}
+
 app.post('/api/productos', h((req, res) => {
   const d = leerProductoBody(req.body);
   if (!d.nombre) throw new Error('Falta el nombre del producto');
+  chequearCodigoUnico(d.codigo_barra, suc(req), 0);
+  if (d.tipo === 'elaborado' && !d.codigo_barra) d.codigo_barra = D.generarCodigoInterno();
   const r = db.prepare(`INSERT INTO producto
-    (sucursal_id, nombre, categoria, unidad_stock, minutos_mano_obra, precio_unidad, precio_docena, precio_kg,
+    (sucursal_id, nombre, categoria, unidad_stock, tipo, codigo_barra, minutos_mano_obra, precio_unidad, precio_docena, precio_kg,
      vende_unidad, vende_docena, vende_kg, vende_monto, stock)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0)`).run(
-    suc(req), d.nombre, d.categoria, d.unidad_stock, d.minutos_mano_obra,
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)`).run(
+    suc(req), d.nombre, d.categoria, d.unidad_stock, d.tipo, d.codigo_barra, d.minutos_mano_obra,
     d.precio_unidad, d.precio_docena, d.precio_kg,
     d.vende_unidad, d.vende_docena, d.vende_kg, d.vende_monto
   );
@@ -242,10 +260,11 @@ app.put('/api/productos/:id', h((req, res) => {
   const cur = db.prepare('SELECT * FROM producto WHERE id = ?').get(id);
   if (!cur) throw new Error('Producto no encontrado');
   const d = leerProductoBody(req.body, cur);
-  db.prepare(`UPDATE producto SET nombre=?, categoria=?, unidad_stock=?, minutos_mano_obra=?,
+  chequearCodigoUnico(d.codigo_barra, cur.sucursal_id, id);
+  db.prepare(`UPDATE producto SET nombre=?, categoria=?, unidad_stock=?, tipo=?, codigo_barra=?, minutos_mano_obra=?,
     precio_unidad=?, precio_docena=?, precio_kg=?,
     vende_unidad=?, vende_docena=?, vende_kg=?, vende_monto=? WHERE id=?`).run(
-    d.nombre, d.categoria, d.unidad_stock, d.minutos_mano_obra,
+    d.nombre, d.categoria, d.unidad_stock, d.tipo, d.codigo_barra, d.minutos_mano_obra,
     d.precio_unidad, d.precio_docena, d.precio_kg,
     d.vende_unidad, d.vende_docena, d.vende_kg, d.vende_monto, id
   );
@@ -273,6 +292,34 @@ app.put('/api/productos/:id/receta', h((req, res) => {
   if (!db.prepare('SELECT 1 FROM producto WHERE id = ?').get(id)) throw new Error('Producto no encontrado');
   guardarReceta(id, Array.isArray(req.body.items) ? req.body.items : []);
   res.json({ ok: true });
+}));
+
+app.get('/api/productos/codigo/:codigo', h((req, res) => {
+  const p = D.buscarProductoPorCodigo(req.params.codigo, suc(req));
+  if (!p) return res.status(404).json({ error: 'No hay ningún producto con ese código' });
+  res.json(productoConCosto(p, D.overheadPorMinuto(), D.getConfigNum('costo_hora', 0)));
+}));
+
+app.post('/api/productos/:id/codigo', h((req, res) => {
+  const id = +req.params.id;
+  const p = db.prepare('SELECT * FROM producto WHERE id = ?').get(id);
+  if (!p) throw new Error('Producto no encontrado');
+  if (!p.codigo_barra) {
+    const codigo = D.generarCodigoInterno();
+    db.prepare('UPDATE producto SET codigo_barra = ? WHERE id = ?').run(codigo, id);
+  }
+  res.json(db.prepare('SELECT * FROM producto WHERE id = ?').get(id));
+}));
+
+app.post('/api/productos/:id/recepcion', h((req, res) => {
+  const id = +req.params.id;
+  const p = db.prepare('SELECT * FROM producto WHERE id = ?').get(id);
+  if (!p) throw new Error('Producto no encontrado');
+  if (p.tipo !== 'reventa') throw new Error('Solo los productos de reventa reciben mercadería por esta vía');
+  const r = D.registrarRecepcionMercaderia(id, p.sucursal_id, {
+    cantidad: req.body.cantidad, costoTotal: req.body.costo_total, pagadoCon: req.body.pagado_con
+  });
+  res.json({ ok: true, ...r, producto: db.prepare('SELECT * FROM producto WHERE id = ?').get(id) });
 }));
 
 // =====================================================================
