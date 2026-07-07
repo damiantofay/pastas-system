@@ -55,14 +55,16 @@ function pintar(cont, productos) {
   ]));
 }
 
-function abrirForm(cont, p) {
+function abrirForm(cont, p, codigoPrellenado) {
   const esNuevo = !p;
-  p = p || { nombre: '', categoria: 'General', unidad_stock: 'unidad', minutos_mano_obra: 0,
-    precio_unidad: 0, precio_docena: 0, precio_kg: 0, vende_unidad: 1, vende_docena: 0, vende_kg: 0, vende_monto: 1 };
+  p = p || { nombre: '', categoria: 'General', unidad_stock: 'unidad', tipo: 'elaborado', codigo_barra: codigoPrellenado || '',
+    minutos_mano_obra: 0, precio_unidad: 0, precio_docena: 0, precio_kg: 0, vende_unidad: 1, vende_docena: 0, vende_kg: 0, vende_monto: 1 };
 
   const inNombre = input({ value: p.nombre, placeholder: 'Ej: Ravioles de ricota' });
   const inCat = input({ value: p.categoria, placeholder: 'Ej: Rellenas' });
   const inUnidad = select([{ value: 'unidad', label: 'Por unidad (se cuenta)' }, { value: 'kg', label: 'Por kilo (se pesa)' }], p.unidad_stock);
+  const inTipo = select([{ value: 'elaborado', label: 'Elaborado (con receta propia)' }, { value: 'reventa', label: 'Reventa (comprado ya terminado)' }], p.tipo || 'elaborado');
+  const inCodigo = input({ value: p.codigo_barra || codigoPrellenado || '', placeholder: 'Escaneá el código o dejalo vacío' });
   const inMin = input({ type: 'number', step: '0.1', value: p.minutos_mano_obra, inputmode: 'decimal' });
 
   const inPU = input({ type: 'number', step: '1', value: p.precio_unidad, inputmode: 'decimal' });
@@ -101,9 +103,19 @@ function abrirForm(cont, p) {
     recetaCont.appendChild(fila);
   }
 
+  const recetaSeccion = el('div', {}, [
+    el('h3', { text: 'Receta', style: { marginTop: '8px' } }),
+    el('p', { class: 'ayuda', text: 'Cuánto de cada ingrediente lleva 1 ' + (p.unidad_stock === 'kg' ? 'kilo' : 'unidad') + '. Sirve para calcular el costo y descontar stock al producir.' }),
+    recetaCont,
+    el('button', { class: 'btn btn-fantasma btn-chico', text: '+ Agregar ingrediente', onClick: () => addFilaReceta(), style: { marginTop: '6px' } })
+  ]);
+  const actualizarVisibilidadReceta = () => { recetaSeccion.style.display = inTipo.value === 'reventa' ? 'none' : ''; };
+  inTipo.addEventListener('change', actualizarVisibilidadReceta);
+
   const form = el('div', {}, [
     campo('Nombre', inNombre),
     el('div', { class: 'campos-2' }, [campo('Categoría', inCat), campo('Se vende', inUnidad)]),
+    el('div', { class: 'campos-2' }, [campo('Tipo', inTipo), campo('Código de barras', inCodigo, 'Escaneá con el lector, o dejalo vacío (se genera solo en elaborados).')]),
     campo('Formas de venta', el('div', { class: 'switches' }, [swU.node, swD.node, swK.node, swM.node]), 'Marcá todas las que uses para este producto.'),
     el('div', { class: 'campos-2' }, [
       campo('Precio por unidad', inPU),
@@ -113,11 +125,9 @@ function abrirForm(cont, p) {
       campo('Precio por kilo', inPK),
       campo('Minutos de trabajo', inMin, `por ${p.unidad_stock === 'kg' ? 'kilo' : 'unidad'} producido`)
     ]),
-    el('h3', { text: 'Receta', style: { marginTop: '8px' } }),
-    el('p', { class: 'ayuda', text: 'Cuánto de cada ingrediente lleva 1 ' + (p.unidad_stock === 'kg' ? 'kilo' : 'unidad') + '. Sirve para calcular el costo y descontar stock al producir.' }),
-    recetaCont,
-    el('button', { class: 'btn btn-fantasma btn-chico', text: '+ Agregar ingrediente', onClick: () => addFilaReceta(), style: { marginTop: '6px' } })
+    recetaSeccion
   ]);
+  actualizarVisibilidadReceta();
 
   // cargar receta existente
   if (!esNuevo) {
@@ -139,12 +149,13 @@ function abrirForm(cont, p) {
 
     const payload = {
       nombre: inNombre.value, categoria: inCat.value, unidad_stock: inUnidad.value,
+      tipo: inTipo.value, codigo_barra: inCodigo.value.trim() || null,
       minutos_mano_obra: parseFloat(inMin.value) || 0,
       precio_unidad: parseFloat(inPU.value) || 0,
       precio_docena: parseFloat(inPD.value) || 0,
       precio_kg: parseFloat(inPK.value) || 0,
       vende_unidad: swU.chk.checked, vende_docena: swD.chk.checked, vende_kg: swK.chk.checked, vende_monto: swM.chk.checked,
-      receta
+      receta: inTipo.value === 'reventa' ? [] : receta
     };
     if (!payload.nombre.trim()) { toast('Poné un nombre', 'error'); return; }
     try {
