@@ -1,5 +1,6 @@
 import API from './api.js';
 import { el, clear, money, numAR, input, select, campo, modal, cerrarModal, toast, confirmar, cantLegible } from './ui.js';
+import { activarEscaner } from './scanner.js';
 
 const unidadDisplay = (u) => (u === 'kg' ? 'g' : u === 'l' ? 'ml' : 'u');
 const baseToDisplay = (c, u) => (u === 'unidad' ? c : c * 1000);
@@ -11,6 +12,15 @@ export async function vistaProductos(main) {
   const cont = el('div', { class: 'vista' });
   clear(main).appendChild(cont);
   await recargar(cont);
+  activarEscaner((codigo) => manejarEscaneo(cont, codigo));
+}
+
+async function manejarEscaneo(cont, codigo) {
+  let producto = null;
+  try { producto = await API.get('/api/productos/codigo/' + encodeURIComponent(codigo)); }
+  catch (e) { producto = null; }
+  if (producto) abrirActualizacionRapida(cont, producto);
+  else abrirForm(cont, null, codigo);
 }
 
 async function recargar(cont) {
@@ -30,6 +40,11 @@ function pintar(cont, productos) {
       el('td', { class: 'num ' + margenClase, text: p.margen_pct == null ? '—' : numAR(p.margen_pct, 1) + '%' }),
       el('td', {}, [
         el('button', { class: 'btn btn-chico btn-fantasma', text: 'Editar', onClick: () => abrirForm(cont, p) }),
+        p.codigo_barra
+          ? el('button', { class: 'btn btn-chico btn-fantasma', text: 'Etiqueta', style: { marginLeft: '8px' }, onClick: () => abrirEtiqueta(p) })
+          : el('button', { class: 'btn btn-chico btn-fantasma', text: 'Generar código', style: { marginLeft: '8px' }, onClick: async () => {
+              await API.post('/api/productos/' + p.id + '/codigo'); toast('Código generado', 'ok'); recargar(cont);
+            } }),
         el('button', { class: 'btn btn-chico btn-rojo', text: 'Quitar', style: { marginLeft: '8px' }, onClick: async () => {
           if (await confirmar(`¿Quitar "${p.nombre}"?`, { textoOk: 'Quitar', peligro: true })) {
             await API.del('/api/productos/' + p.id); toast('Producto quitado', 'ok'); recargar(cont);
@@ -55,14 +70,16 @@ function pintar(cont, productos) {
   ]));
 }
 
-function abrirForm(cont, p) {
+function abrirForm(cont, p, codigoPrellenado) {
   const esNuevo = !p;
-  p = p || { nombre: '', categoria: 'General', unidad_stock: 'unidad', minutos_mano_obra: 0,
-    precio_unidad: 0, precio_docena: 0, precio_kg: 0, vende_unidad: 1, vende_docena: 0, vende_kg: 0, vende_monto: 1 };
+  p = p || { nombre: '', categoria: 'General', unidad_stock: 'unidad', tipo: 'elaborado', codigo_barra: codigoPrellenado || '',
+    minutos_mano_obra: 0, precio_unidad: 0, precio_docena: 0, precio_kg: 0, vende_unidad: 1, vende_docena: 0, vende_kg: 0, vende_monto: 1 };
 
   const inNombre = input({ value: p.nombre, placeholder: 'Ej: Ravioles de ricota' });
   const inCat = input({ value: p.categoria, placeholder: 'Ej: Rellenas' });
   const inUnidad = select([{ value: 'unidad', label: 'Por unidad (se cuenta)' }, { value: 'kg', label: 'Por kilo (se pesa)' }], p.unidad_stock);
+  const inTipo = select([{ value: 'elaborado', label: 'Elaborado (con receta propia)' }, { value: 'reventa', label: 'Reventa (comprado ya terminado)' }], p.tipo || 'elaborado');
+  const inCodigo = input({ value: p.codigo_barra || codigoPrellenado || '', placeholder: 'Escaneá el código o dejalo vacío' });
   const inMin = input({ type: 'number', step: '0.1', value: p.minutos_mano_obra, inputmode: 'decimal' });
 
   const inPU = input({ type: 'number', step: '1', value: p.precio_unidad, inputmode: 'decimal' });
@@ -101,9 +118,19 @@ function abrirForm(cont, p) {
     recetaCont.appendChild(fila);
   }
 
+  const recetaSeccion = el('div', {}, [
+    el('h3', { text: 'Receta', style: { marginTop: '8px' } }),
+    el('p', { class: 'ayuda', text: 'Cuánto de cada ingrediente lleva 1 ' + (p.unidad_stock === 'kg' ? 'kilo' : 'unidad') + '. Sirve para calcular el costo y descontar stock al producir.' }),
+    recetaCont,
+    el('button', { class: 'btn btn-fantasma btn-chico', text: '+ Agregar ingrediente', onClick: () => addFilaReceta(), style: { marginTop: '6px' } })
+  ]);
+  const actualizarVisibilidadReceta = () => { recetaSeccion.style.display = inTipo.value === 'reventa' ? 'none' : ''; };
+  inTipo.addEventListener('change', actualizarVisibilidadReceta);
+
   const form = el('div', {}, [
     campo('Nombre', inNombre),
     el('div', { class: 'campos-2' }, [campo('Categoría', inCat), campo('Se vende', inUnidad)]),
+    el('div', { class: 'campos-2' }, [campo('Tipo', inTipo), campo('Código de barras', inCodigo, 'Escaneá con el lector, o dejalo vacío (se genera solo en elaborados).')]),
     campo('Formas de venta', el('div', { class: 'switches' }, [swU.node, swD.node, swK.node, swM.node]), 'Marcá todas las que uses para este producto.'),
     el('div', { class: 'campos-2' }, [
       campo('Precio por unidad', inPU),
@@ -113,11 +140,9 @@ function abrirForm(cont, p) {
       campo('Precio por kilo', inPK),
       campo('Minutos de trabajo', inMin, `por ${p.unidad_stock === 'kg' ? 'kilo' : 'unidad'} producido`)
     ]),
-    el('h3', { text: 'Receta', style: { marginTop: '8px' } }),
-    el('p', { class: 'ayuda', text: 'Cuánto de cada ingrediente lleva 1 ' + (p.unidad_stock === 'kg' ? 'kilo' : 'unidad') + '. Sirve para calcular el costo y descontar stock al producir.' }),
-    recetaCont,
-    el('button', { class: 'btn btn-fantasma btn-chico', text: '+ Agregar ingrediente', onClick: () => addFilaReceta(), style: { marginTop: '6px' } })
+    recetaSeccion
   ]);
+  actualizarVisibilidadReceta();
 
   // cargar receta existente
   if (!esNuevo) {
@@ -139,12 +164,13 @@ function abrirForm(cont, p) {
 
     const payload = {
       nombre: inNombre.value, categoria: inCat.value, unidad_stock: inUnidad.value,
+      tipo: inTipo.value, codigo_barra: inCodigo.value.trim() || null,
       minutos_mano_obra: parseFloat(inMin.value) || 0,
       precio_unidad: parseFloat(inPU.value) || 0,
       precio_docena: parseFloat(inPD.value) || 0,
       precio_kg: parseFloat(inPK.value) || 0,
       vende_unidad: swU.chk.checked, vende_docena: swD.chk.checked, vende_kg: swK.chk.checked, vende_monto: swM.chk.checked,
-      receta
+      receta: inTipo.value === 'reventa' ? [] : receta
     };
     if (!payload.nombre.trim()) { toast('Poné un nombre', 'error'); return; }
     try {
@@ -162,4 +188,106 @@ function abrirForm(cont, p) {
       el('button', { class: 'btn btn-verde', text: 'Guardar', onClick: guardar })
     ]
   });
+}
+
+function abrirActualizacionRapida(cont, p) {
+  const inPU = p.vende_unidad ? input({ type: 'number', step: '1', value: p.precio_unidad, inputmode: 'decimal' }) : null;
+  const inPD = p.vende_docena ? input({ type: 'number', step: '1', value: p.precio_docena, inputmode: 'decimal' }) : null;
+  const inPK = p.vende_kg ? input({ type: 'number', step: '1', value: p.precio_kg, inputmode: 'decimal' }) : null;
+  const esReventa = p.tipo === 'reventa';
+  const inCant = esReventa ? input({ type: 'number', step: 'any', inputmode: 'decimal', placeholder: '0' }) : null;
+  const inCosto = esReventa ? input({ type: 'number', step: 'any', inputmode: 'decimal', placeholder: '0' }) : null;
+
+  const campos = [];
+  if (inPU) campos.push(campo('Precio por unidad', inPU));
+  if (inPD) campos.push(campo('Precio por docena', inPD));
+  if (inPK) campos.push(campo('Precio por kilo', inPK));
+  if (esReventa) {
+    campos.push(el('h3', { text: 'Recibí mercadería (opcional)', style: { marginTop: '8px' } }));
+    campos.push(el('div', { class: 'campos-2' }, [campo('Cantidad recibida', inCant), campo('Costo total', inCosto)]));
+  }
+
+  async function guardar() {
+    const payloadPrecio = {};
+    if (inPU) payloadPrecio.precio_unidad = parseFloat(inPU.value) || 0;
+    if (inPD) payloadPrecio.precio_docena = parseFloat(inPD.value) || 0;
+    if (inPK) payloadPrecio.precio_kg = parseFloat(inPK.value) || 0;
+
+    const cant = inCant ? parseFloat(inCant.value) || 0 : 0;
+    const costo = inCosto ? parseFloat(inCosto.value) || 0 : 0;
+
+    let huboError = false;
+    if (Object.keys(payloadPrecio).length) {
+      try { await API.put('/api/productos/' + p.id, payloadPrecio); }
+      catch (e) { toast('No se pudo actualizar el precio: ' + e.message, 'error'); huboError = true; }
+    }
+    if (cant > 0) {
+      try { await API.post('/api/productos/' + p.id + '/recepcion', { cantidad: cant, costo_total: costo }); }
+      catch (e) { toast('No se pudo registrar la recepción: ' + e.message, 'error'); huboError = true; }
+    }
+
+    cerrarModal();
+    recargar(cont);
+    if (!huboError) toast(`"${p.nombre}" actualizado`, 'ok');
+  }
+
+  const primerInput = inPU || inPD || inPK || inCant;
+  modal({
+    title: p.nombre,
+    body: el('div', {}, campos),
+    actions: [
+      el('button', { class: 'btn btn-fantasma', text: 'Cerrar', onClick: cerrarModal }),
+      el('button', { class: 'btn btn-verde', text: 'Guardar', onClick: guardar })
+    ]
+  });
+  if (primerInput) primerInput.focus();
+}
+
+function abrirEtiqueta(p) {
+  const inCant = input({ type: 'number', value: 10, min: 1, step: '1', inputmode: 'numeric' });
+  const img = el('img', { src: '/api/productos/' + p.id + '/etiqueta.png', style: { display: 'block', margin: '0 auto 14px', maxWidth: '260px' } });
+  modal({
+    title: 'Etiqueta — ' + p.nombre,
+    body: el('div', {}, [
+      img,
+      campo('Cantidad de etiquetas a imprimir', inCant)
+    ]),
+    actions: [
+      el('button', { class: 'btn btn-fantasma', text: 'Cerrar', onClick: cerrarModal }),
+      el('button', { class: 'btn btn-primario', text: 'Imprimir hoja', onClick: () => imprimirHoja(p, parseInt(inCant.value, 10) || 1) })
+    ]
+  });
+}
+
+function escaparHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function imprimirHoja(p, cantidad) {
+  const win = window.open('', '_blank');
+  const nombreEscapado = escaparHtml(p.nombre);
+  const etiquetas = Array.from({ length: cantidad }, () => `
+    <div class="etq">
+      <div class="etq-nombre">${nombreEscapado}</div>
+      <img src="/api/productos/${p.id}/etiqueta.png">
+    </div>
+  `).join('');
+  win.document.write(`
+    <!DOCTYPE html>
+    <html><head><title>Etiquetas — ${nombreEscapado}</title>
+    <style>
+      body{ font-family: sans-serif; }
+      .hoja{ display:flex; flex-wrap:wrap; gap:6mm; }
+      .etq{ width:45mm; border:1px dashed #999; padding:3mm; text-align:center; page-break-inside:avoid; }
+      .etq-nombre{ font-weight:700; font-size:11px; margin-bottom:2mm; }
+      .etq img{ width:100%; }
+    </style>
+    </head><body><div class="hoja">${etiquetas}</div></body></html>
+  `);
+  win.document.close();
+  win.onload = () => win.print();
 }
