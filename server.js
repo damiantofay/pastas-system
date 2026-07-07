@@ -610,8 +610,12 @@ app.get('/api/reportes/resumen', h((req, res) => {
     if (!prodCache[it.producto_id]) prodCache[it.producto_id] = db.prepare('SELECT * FROM producto WHERE id=?').get(it.producto_id);
     const prod = prodCache[it.producto_id];
     if (!costoCache[it.producto_id]) {
-      const c = D.costoProducto(it.producto_id, { overheadPorMinuto: ohPorMin, costoHora });
-      costoCache[it.producto_id] = c ? c.total : 0;
+      if (prod && prod.tipo === 'reventa') {
+        costoCache[it.producto_id] = prod.costo_compra || 0;
+      } else {
+        const c = D.costoProducto(it.producto_id, { overheadPorMinuto: ohPorMin, costoHora });
+        costoCache[it.producto_id] = c ? c.total : 0;
+      }
     }
     const u = unidadesDeItem(it, prod);
     costoVendido += u * costoCache[it.producto_id];
