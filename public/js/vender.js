@@ -1,5 +1,6 @@
 import API from './api.js';
 import { el, clear, money, numAR, modal, cerrarModal, toast, colorCategoria } from './ui.js';
+import { activarEscaner } from './scanner.js';
 
 let productos = [];
 let categoriaActiva = 'Todos';
@@ -11,6 +12,15 @@ export async function vistaVender(main) {
   productos = await API.get('/api/productos');
   carrito = [];
   render(main);
+  activarEscaner((codigo) => manejarEscaneo(main, codigo));
+}
+
+async function manejarEscaneo(main, codigo) {
+  let p = null;
+  try { p = await API.get('/api/productos/codigo/' + encodeURIComponent(codigo)); }
+  catch (e) { p = null; }
+  if (!p) { toast('No hay ningún producto con ese código', 'error'); return; }
+  abrirAgregar(p, main);
 }
 
 function modosDe(p) {
