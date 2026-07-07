@@ -9,6 +9,7 @@ const express = require('express');
 const path = require('path');
 const D = require('./db');
 const { db } = D;
+const bwipjs = require('bwip-js');
 
 const app = express();
 app.use(express.json());
@@ -321,6 +322,27 @@ app.post('/api/productos/:id/recepcion', h((req, res) => {
   });
   res.json({ ok: true, ...r, producto: db.prepare('SELECT * FROM producto WHERE id = ?').get(id) });
 }));
+
+// No se envuelve con h() porque bwip-js devuelve una Promise y h() solo
+// atrapa errores síncronos; el manejo de error va explícito acá.
+app.get('/api/productos/:id/etiqueta.png', (req, res) => {
+  const p = db.prepare('SELECT * FROM producto WHERE id = ?').get(+req.params.id);
+  if (!p) return res.status(404).json({ error: 'Producto no encontrado' });
+  if (!p.codigo_barra) return res.status(400).json({ error: 'Este producto todavía no tiene código de barras' });
+  bwipjs.toBuffer({
+    bcid: 'code128',
+    text: p.codigo_barra,
+    scale: 3,
+    height: 10,
+    includetext: true,
+    textxalign: 'center'
+  }).then((png) => {
+    res.set('Content-Type', 'image/png');
+    res.send(png);
+  }).catch((err) => {
+    res.status(400).json({ error: 'No se pudo generar el código de barras: ' + (err.message || err) });
+  });
+});
 
 // =====================================================================
 // PRODUCCIÓN  (consume ingredientes, suma stock de producto, registra mano de obra)
