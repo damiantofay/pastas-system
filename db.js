@@ -171,6 +171,35 @@ function crearEsquema() {
   }
 }
 
+// ---- Migración: columnas agregadas después del esquema inicial --------
+function migrarEsquema() {
+  const columnas = db.prepare("PRAGMA table_info(producto)").all().map((c) => c.name);
+  if (!columnas.includes('codigo_barra')) {
+    db.exec('ALTER TABLE producto ADD COLUMN codigo_barra TEXT');
+  }
+  if (!columnas.includes('tipo')) {
+    db.exec("ALTER TABLE producto ADD COLUMN tipo TEXT NOT NULL DEFAULT 'elaborado'");
+  }
+  if (!columnas.includes('costo_compra')) {
+    db.exec('ALTER TABLE producto ADD COLUMN costo_compra REAL NOT NULL DEFAULT 0');
+  }
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_producto_codigo
+    ON producto(sucursal_id, codigo_barra) WHERE codigo_barra IS NOT NULL
+  `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS recepcion_mercaderia (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sucursal_id INTEGER NOT NULL DEFAULT 1,
+      producto_id INTEGER NOT NULL REFERENCES producto(id),
+      fecha TEXT NOT NULL,
+      cantidad REAL NOT NULL,
+      costo_total REAL NOT NULL,
+      pagado_con TEXT NOT NULL DEFAULT 'efectivo'
+    )
+  `);
+}
+
 // ---- Helpers de config ---------------------------------------------------
 function getConfig(clave) {
   const r = db.prepare('SELECT valor FROM config WHERE clave = ?').get(clave);
@@ -235,6 +264,42 @@ function costoProducto(productoId, opts = {}) {
     minutos_mano_obra: p.minutos_mano_obra || 0,
     detalle_material: detalle
   };
+}
+
+// ---- Código de barras interno y recepción de mercadería (reventa) --------
+function generarCodigoInterno() {
+  const r = db.prepare(
+    "SELECT MAX(CAST(SUBSTR(codigo_barra,4) AS INTEGER)) AS maximo FROM producto WHERE codigo_barra LIKE 'PP-%'"
+  ).get();
+  const siguiente = (r.maximo || 0) + 1;
+  return 'PP-' + String(siguiente).padStart(6, '0');
+}
+
+function buscarProductoPorCodigo(codigo, sucursalId) {
+  return db.prepare('SELECT * FROM producto WHERE codigo_barra = ? AND sucursal_id = ?')
+    .get(String(codigo).trim(), sucursalId);
+}
+
+function registrarRecepcionMercaderia(productoId, sucursalId, { cantidad, costoTotal, pagadoCon = 'efectivo', fecha }) {
+  const cant = Number(cantidad);
+  const costo = Number(costoTotal);
+  if (!(cant > 0)) throw new Error('La cantidad recibida debe ser mayor a 0');
+  if (!(costo >= 0)) throw new Error('El costo total no puede ser negativo');
+  const f = fecha || ahoraAR();
+  const costoUnitario = round2(costo / cant);
+  db.exec('BEGIN');
+  try {
+    const ins = db.prepare(
+      'INSERT INTO recepcion_mercaderia (sucursal_id, producto_id, fecha, cantidad, costo_total, pagado_con) VALUES (?,?,?,?,?,?)'
+    ).run(sucursalId, productoId, f, cant, costo, pagadoCon);
+    db.prepare('UPDATE producto SET stock = stock + ?, costo_compra = ? WHERE id = ?')
+      .run(cant, costoUnitario, productoId);
+    db.exec('COMMIT');
+    return { id: Number(ins.lastInsertRowid), costo_unitario: costoUnitario };
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
 }
 
 function round2(n) {
@@ -364,6 +429,7 @@ function seed() {
 }
 
 crearEsquema();
+migrarEsquema();
 
 module.exports = {
   db, driver, DB_PATH,
@@ -371,7 +437,8 @@ module.exports = {
   getConfig, getConfigNum, setConfig,
   overheadPorMinuto, costoProducto, round2, seed,
   hashPassword, verifyPassword, getUsuarioPorLogin, getUsuario, listarUsuarios,
-  crearUsuario, cambiarPassword, hayUsuarios, getSessionSecret
+  crearUsuario, cambiarPassword, hayUsuarios, getSessionSecret,
+  generarCodigoInterno, buscarProductoPorCodigo, registrarRecepcionMercaderia
 };
 
 // CLI:
