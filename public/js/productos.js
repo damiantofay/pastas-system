@@ -203,23 +203,30 @@ function abrirActualizacionRapida(cont, p) {
   }
 
   async function guardar() {
-    try {
-      const payloadPrecio = {};
-      if (inPU) payloadPrecio.precio_unidad = parseFloat(inPU.value) || 0;
-      if (inPD) payloadPrecio.precio_docena = parseFloat(inPD.value) || 0;
-      if (inPK) payloadPrecio.precio_kg = parseFloat(inPK.value) || 0;
-      if (Object.keys(payloadPrecio).length) await API.put('/api/productos/' + p.id, payloadPrecio);
+    const payloadPrecio = {};
+    if (inPU) payloadPrecio.precio_unidad = parseFloat(inPU.value) || 0;
+    if (inPD) payloadPrecio.precio_docena = parseFloat(inPD.value) || 0;
+    if (inPK) payloadPrecio.precio_kg = parseFloat(inPK.value) || 0;
 
-      const cant = inCant ? parseFloat(inCant.value) || 0 : 0;
-      const costo = inCosto ? parseFloat(inCosto.value) || 0 : 0;
-      if (cant > 0) await API.post('/api/productos/' + p.id + '/recepcion', { cantidad: cant, costo_total: costo });
+    const cant = inCant ? parseFloat(inCant.value) || 0 : 0;
+    const costo = inCosto ? parseFloat(inCosto.value) || 0 : 0;
 
-      cerrarModal();
-      toast(`"${p.nombre}" actualizado`, 'ok');
-      recargar(cont);
-    } catch (e) { toast(e.message, 'error'); }
+    let huboError = false;
+    if (Object.keys(payloadPrecio).length) {
+      try { await API.put('/api/productos/' + p.id, payloadPrecio); }
+      catch (e) { toast('No se pudo actualizar el precio: ' + e.message, 'error'); huboError = true; }
+    }
+    if (cant > 0) {
+      try { await API.post('/api/productos/' + p.id + '/recepcion', { cantidad: cant, costo_total: costo }); }
+      catch (e) { toast('No se pudo registrar la recepción: ' + e.message, 'error'); huboError = true; }
+    }
+
+    cerrarModal();
+    recargar(cont);
+    if (!huboError) toast(`"${p.nombre}" actualizado`, 'ok');
   }
 
+  const primerInput = inPU || inPD || inPK || inCant;
   modal({
     title: p.nombre,
     body: el('div', {}, campos),
@@ -228,4 +235,5 @@ function abrirActualizacionRapida(cont, p) {
       el('button', { class: 'btn btn-verde', text: 'Guardar', onClick: guardar })
     ]
   });
+  if (primerInput) primerInput.focus();
 }
