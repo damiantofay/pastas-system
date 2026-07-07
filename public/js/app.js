@@ -1,5 +1,6 @@
 import API from './api.js';
 import { el, clear, toast, iconos } from './ui.js';
+import { desactivarEscaner } from './scanner.js';
 import { vistaVender } from './vender.js';
 import { vistaCaja } from './caja.js';
 import { vistaProductos } from './productos.js';
@@ -32,6 +33,7 @@ async function montar(id) {
   if (!v) return;
   actual = id;
   pintarNav();
+  desactivarEscaner();
   clear(main).appendChild(el('div', { class: 'cargando', text: 'Cargando…' }));
   try { await v.fn(main); }
   catch (e) { clear(main).appendChild(el('div', { class: 'vista' }, [el('div', { class: 'aviso', text: 'Error: ' + e.message })])); }
