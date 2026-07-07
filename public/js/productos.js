@@ -259,17 +259,26 @@ function abrirEtiqueta(p) {
   });
 }
 
+function escaparHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function imprimirHoja(p, cantidad) {
   const win = window.open('', '_blank');
+  const nombreEscapado = escaparHtml(p.nombre);
   const etiquetas = Array.from({ length: cantidad }, () => `
     <div class="etq">
-      <div class="etq-nombre">${p.nombre}</div>
+      <div class="etq-nombre">${nombreEscapado}</div>
       <img src="/api/productos/${p.id}/etiqueta.png">
     </div>
   `).join('');
   win.document.write(`
     <!DOCTYPE html>
-    <html><head><title>Etiquetas — ${p.nombre}</title>
+    <html><head><title>Etiquetas — ${nombreEscapado}</title>
     <style>
       body{ font-family: sans-serif; }
       .hoja{ display:flex; flex-wrap:wrap; gap:6mm; }
