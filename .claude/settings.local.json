@@ -2,7 +2,24 @@
   "permissions": {
     "allow": [
       "Skill(run)",
-      "Bash(chromium-cli *)"
+      "Bash(chromium-cli *)",
+      "Read(//opt/**)",
+      "Bash(useradd -m -s /bin/bash claudeuser)",
+      "Bash(echo 'claudeuser ALL=\\(ALL\\) NOPASSWD:ALL')",
+      "Bash(chmod 0440 /etc/sudoers.d/claudeuser)",
+      "Bash(visudo -cf /etc/sudoers.d/claudeuser)",
+      "Bash(find / -maxdepth 3 -iname \"*dockerfile*\")",
+      "Read(//root/**)",
+      "Bash(getent group *)",
+      "Bash(sudo -l -U claudeuser)",
+      "Read(//home/claudeuser/**)",
+      "Bash(su - claudeuser -c \"which claude node npm\")",
+      "Bash(su - claudeuser -c \"claude --version\")",
+      "Bash(su - claudeuser -c \"cd ~ && echo test > /tmp/x.txt 2>&1; claude --dangerously-skip-permissions --print 'echo hi' 2>&1 | head -20\")",
+      "Bash(setfacl -m u:claudeuser:x /root)",
+      "Bash(chown -R claudeuser:claudeuser /root/fabrica-pastas)",
+      "Bash(getfacl -p /root)",
+      "Bash(chown -R root:root /root/fabrica-pastas)"
     ]
   }
 }

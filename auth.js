@@ -6,7 +6,20 @@
  * El secreto de firma se guarda en la config y persiste entre reinicios.
  */
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
 const D = require('./db');
+
+// Máx 5 intentos de login por IP cada 15 minutos.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos de inicio de sesión. Esperá unos minutos y volvé a intentar.' },
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Demasiados intentos de inicio de sesión. Esperá unos minutos y volvé a intentar.' });
+  },
+});
 
 const COOKIE = 'sesion';
 const DIAS = 30;
@@ -78,7 +91,7 @@ function requireAdmin(req, res, next) {
 
 // Registra /api/login, /api/logout y /api/me. Devuelve los middlewares.
 function montar(app) {
-  app.post('/api/login', (req, res) => {
+  app.post('/api/login', loginLimiter, (req, res) => {
     try {
       const u = D.getUsuarioPorLogin(req.body.usuario || '');
       if (!u || !D.verifyPassword(req.body.contraseña || req.body.contrasena || '', u.pass_hash)) {
