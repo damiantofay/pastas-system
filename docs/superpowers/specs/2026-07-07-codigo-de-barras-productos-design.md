@@ -73,13 +73,15 @@ Un lector USB/Bluetooth tipo "pistola" emite las teclas del código muy rápido 
 
 Se implementa como un helper compartido (`public/js/scanner.js`) usado por `productos.js` y `vender.js`.
 
-### Generación de código de barras visual (Code128)
+### Generación de código de barras visual (Code128, vía `bwip-js`)
 
-Se agrega `public/js/barcode.js`: un encoder Code128 (subset B, alfanumérico) en JavaScript puro, vendorizado (sin CDN ni dependencia npm nueva), que dibuja el código en un `<canvas>` o `<svg>`. Coherente con que el frontend ya es JS plano sin bundler.
+Escribir a mano el algoritmo de codificación Code128 (tabla de anchos de barra) es propenso a errores difíciles de detectar sin un lector físico a mano, y un error ahí generaría etiquetas que no escanean en producción. Para evitar ese riesgo, se usa `bwip-js` (paquete npm real, JavaScript puro, sin dependencias nativas — no requiere compilador como sí ocurre opcionalmente con `better-sqlite3`), agregado como dependencia de `package.json`.
 
-Se usa en dos lugares:
+Nuevo endpoint `GET /api/productos/:id/etiqueta.png` que genera la imagen del código de barras en el momento con `bwipjs.toBuffer({ bcid: 'code128', text: codigo_barra, scale: 3, height: 10, includetext: true, textxalign: 'center' })` y la devuelve como `image/png`.
+
+Se usa en dos lugares, ambos como `<img src="/api/productos/:id/etiqueta.png">`:
 - Modal "Ver / imprimir etiqueta" en la ficha de un producto (elaborado o reventa).
-- Hoja de impresión: grilla de etiquetas (nombre + precio + código de barras) del tamaño pensado para recortar con tijera, generada con CSS de impresión (`@media print`) e impresa con el diálogo nativo del navegador — funciona con cualquier impresora común.
+- Hoja de impresión: grilla de etiquetas (nombre + precio + imagen del código) del tamaño pensado para recortar con tijera, generada con CSS de impresión (`@media print`) e impresa con el diálogo nativo del navegador — funciona con cualquier impresora común.
 
 ### Backend (`server.js`, `db.js`)
 
