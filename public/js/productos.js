@@ -1,5 +1,6 @@
 import API from './api.js';
 import { el, clear, money, numAR, input, select, campo, modal, cerrarModal, toast, confirmar, cantLegible } from './ui.js';
+import { activarEscaner } from './scanner.js';
 
 const unidadDisplay = (u) => (u === 'kg' ? 'g' : u === 'l' ? 'ml' : 'u');
 const baseToDisplay = (c, u) => (u === 'unidad' ? c : c * 1000);
@@ -11,6 +12,15 @@ export async function vistaProductos(main) {
   const cont = el('div', { class: 'vista' });
   clear(main).appendChild(cont);
   await recargar(cont);
+  activarEscaner((codigo) => manejarEscaneo(cont, codigo));
+}
+
+async function manejarEscaneo(cont, codigo) {
+  let producto = null;
+  try { producto = await API.get('/api/productos/codigo/' + encodeURIComponent(codigo)); }
+  catch (e) { producto = null; }
+  if (producto) abrirActualizacionRapida(cont, producto);
+  else abrirForm(cont, null, codigo);
 }
 
 async function recargar(cont) {
@@ -170,6 +180,51 @@ function abrirForm(cont, p, codigoPrellenado) {
     body: form,
     actions: [
       el('button', { class: 'btn btn-fantasma', text: 'Cancelar', onClick: cerrarModal }),
+      el('button', { class: 'btn btn-verde', text: 'Guardar', onClick: guardar })
+    ]
+  });
+}
+
+function abrirActualizacionRapida(cont, p) {
+  const inPU = p.vende_unidad ? input({ type: 'number', step: '1', value: p.precio_unidad, inputmode: 'decimal' }) : null;
+  const inPD = p.vende_docena ? input({ type: 'number', step: '1', value: p.precio_docena, inputmode: 'decimal' }) : null;
+  const inPK = p.vende_kg ? input({ type: 'number', step: '1', value: p.precio_kg, inputmode: 'decimal' }) : null;
+  const esReventa = p.tipo === 'reventa';
+  const inCant = esReventa ? input({ type: 'number', step: 'any', inputmode: 'decimal', placeholder: '0' }) : null;
+  const inCosto = esReventa ? input({ type: 'number', step: 'any', inputmode: 'decimal', placeholder: '0' }) : null;
+
+  const campos = [];
+  if (inPU) campos.push(campo('Precio por unidad', inPU));
+  if (inPD) campos.push(campo('Precio por docena', inPD));
+  if (inPK) campos.push(campo('Precio por kilo', inPK));
+  if (esReventa) {
+    campos.push(el('h3', { text: 'Recibí mercadería (opcional)', style: { marginTop: '8px' } }));
+    campos.push(el('div', { class: 'campos-2' }, [campo('Cantidad recibida', inCant), campo('Costo total', inCosto)]));
+  }
+
+  async function guardar() {
+    try {
+      const payloadPrecio = {};
+      if (inPU) payloadPrecio.precio_unidad = parseFloat(inPU.value) || 0;
+      if (inPD) payloadPrecio.precio_docena = parseFloat(inPD.value) || 0;
+      if (inPK) payloadPrecio.precio_kg = parseFloat(inPK.value) || 0;
+      if (Object.keys(payloadPrecio).length) await API.put('/api/productos/' + p.id, payloadPrecio);
+
+      const cant = inCant ? parseFloat(inCant.value) || 0 : 0;
+      const costo = inCosto ? parseFloat(inCosto.value) || 0 : 0;
+      if (cant > 0) await API.post('/api/productos/' + p.id + '/recepcion', { cantidad: cant, costo_total: costo });
+
+      cerrarModal();
+      toast(`"${p.nombre}" actualizado`, 'ok');
+      recargar(cont);
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  modal({
+    title: p.nombre,
+    body: el('div', {}, campos),
+    actions: [
+      el('button', { class: 'btn btn-fantasma', text: 'Cerrar', onClick: cerrarModal }),
       el('button', { class: 'btn btn-verde', text: 'Guardar', onClick: guardar })
     ]
   });
