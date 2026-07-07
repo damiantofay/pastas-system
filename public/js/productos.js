@@ -40,6 +40,11 @@ function pintar(cont, productos) {
       el('td', { class: 'num ' + margenClase, text: p.margen_pct == null ? '—' : numAR(p.margen_pct, 1) + '%' }),
       el('td', {}, [
         el('button', { class: 'btn btn-chico btn-fantasma', text: 'Editar', onClick: () => abrirForm(cont, p) }),
+        p.codigo_barra
+          ? el('button', { class: 'btn btn-chico btn-fantasma', text: 'Etiqueta', style: { marginLeft: '8px' }, onClick: () => abrirEtiqueta(p) })
+          : el('button', { class: 'btn btn-chico btn-fantasma', text: 'Generar código', style: { marginLeft: '8px' }, onClick: async () => {
+              await API.post('/api/productos/' + p.id + '/codigo'); toast('Código generado', 'ok'); recargar(cont);
+            } }),
         el('button', { class: 'btn btn-chico btn-rojo', text: 'Quitar', style: { marginLeft: '8px' }, onClick: async () => {
           if (await confirmar(`¿Quitar "${p.nombre}"?`, { textoOk: 'Quitar', peligro: true })) {
             await API.del('/api/productos/' + p.id); toast('Producto quitado', 'ok'); recargar(cont);
@@ -236,4 +241,44 @@ function abrirActualizacionRapida(cont, p) {
     ]
   });
   if (primerInput) primerInput.focus();
+}
+
+function abrirEtiqueta(p) {
+  const inCant = input({ type: 'number', value: 10, min: 1, step: '1', inputmode: 'numeric' });
+  const img = el('img', { src: '/api/productos/' + p.id + '/etiqueta.png', style: { display: 'block', margin: '0 auto 14px', maxWidth: '260px' } });
+  modal({
+    title: 'Etiqueta — ' + p.nombre,
+    body: el('div', {}, [
+      img,
+      campo('Cantidad de etiquetas a imprimir', inCant)
+    ]),
+    actions: [
+      el('button', { class: 'btn btn-fantasma', text: 'Cerrar', onClick: cerrarModal }),
+      el('button', { class: 'btn btn-primario', text: 'Imprimir hoja', onClick: () => imprimirHoja(p, parseInt(inCant.value, 10) || 1) })
+    ]
+  });
+}
+
+function imprimirHoja(p, cantidad) {
+  const win = window.open('', '_blank');
+  const etiquetas = Array.from({ length: cantidad }, () => `
+    <div class="etq">
+      <div class="etq-nombre">${p.nombre}</div>
+      <img src="/api/productos/${p.id}/etiqueta.png">
+    </div>
+  `).join('');
+  win.document.write(`
+    <!DOCTYPE html>
+    <html><head><title>Etiquetas — ${p.nombre}</title>
+    <style>
+      body{ font-family: sans-serif; }
+      .hoja{ display:flex; flex-wrap:wrap; gap:6mm; }
+      .etq{ width:45mm; border:1px dashed #999; padding:3mm; text-align:center; page-break-inside:avoid; }
+      .etq-nombre{ font-weight:700; font-size:11px; margin-bottom:2mm; }
+      .etq img{ width:100%; }
+    </style>
+    </head><body><div class="hoja">${etiquetas}</div></body></html>
+  `);
+  win.document.close();
+  win.onload = () => win.print();
 }
