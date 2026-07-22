@@ -22,6 +22,14 @@ export function el(tag, attrs = {}, children = []) {
 
 export function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); return node; }
 
+// Mantiene la posicion de scroll de la pagina al volver a pintar una vista
+// (evita el salto al principio que produce clear()+appendChild en listas largas).
+export async function conScroll(fn) {
+  const y = window.scrollY;
+  await fn();
+  requestAnimationFrame(() => window.scrollTo(0, y));
+}
+
 // --- Formato de dinero (Argentina) ---
 export function money(n) {
   const v = Number(n) || 0;
@@ -46,7 +54,7 @@ export function toast(msg, tipo = '') {
 }
 
 // --- Modal ---
-export function modal({ title, body, actions }) {
+export function modal({ title, body, actions, chico = false }) {
   const root = document.getElementById('modal-root');
   clear(root);
   const cont = el('div', { class: 'modal' }, [
@@ -56,7 +64,7 @@ export function modal({ title, body, actions }) {
   if (actions && actions.length) {
     cont.appendChild(el('div', { class: 'modal-acciones' }, actions));
   }
-  const fondo = el('div', { class: 'modal-fondo', onClick: (e) => { if (e.target === fondo) cerrarModal(); } }, [cont]);
+  const fondo = el('div', { class: 'modal-fondo' + (chico ? ' chico' : ''), onClick: (e) => { if (e.target === fondo) cerrarModal(); } }, [cont]);
   root.appendChild(fondo);
   return cont;
 }
@@ -67,6 +75,7 @@ export function confirmar(mensaje, { textoOk = 'Sí', textoNo = 'No', peligro = 
     modal({
       title: mensaje,
       body: el('div'),
+      chico: true,
       actions: [
         el('button', { class: 'btn btn-fantasma', text: textoNo, onClick: () => { cerrarModal(); resolve(false); } }),
         el('button', { class: 'btn ' + (peligro ? 'btn-rojo' : 'btn-primario'), text: textoOk, onClick: () => { cerrarModal(); resolve(true); } })
