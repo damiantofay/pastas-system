@@ -24,9 +24,13 @@
   --r:    16px;
   --r-sm: 10px;
   --sombra: 0 2px 0 var(--borde-fuerte), 0 6px 18px rgba(46,31,23,.09);
+  --sombra-1: 0 1px 0 var(--borde-fuerte), 0 2px 6px rgba(46,31,23,.08);
+  --sombra-2: var(--sombra);
+  --sombra-3: 0 -8px 30px rgba(0,0,0,.25);
   --tap: 60px;
 
   --fuente: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --texto-meta: .82rem;
 }
 
 *{ box-sizing:border-box; }
@@ -104,11 +108,16 @@ h3{ font-size:1.05rem; font-weight:700; }
 .btn:disabled{ opacity:.45; cursor:not-allowed; }
 .btn-chico{ min-height:44px; padding:0 14px; font-size:.95rem; }
 
+.btn:hover, .chip:hover, .ficha:hover{ filter:brightness(0.97); }
+.btn:focus-visible, .chip:focus-visible, .ficha:focus-visible, .nav-btn:focus-visible{
+  outline:3px solid #1F4D3466; outline-offset:2px;
+}
+
 .fila-botones{ display:flex; gap:12px; flex-wrap:wrap; }
 
 /* ---------- Chips de categoría ---------- */
 .chips{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
-.chip{ min-height:52px; padding:0 20px; border-radius:30px; border:2px solid var(--borde-fuerte); background:var(--panel); font-weight:700; font-size:1.02rem; color:var(--vino); }
+.chip{ min-height:52px; padding:0 20px; border-radius:30px; border:2px solid var(--borde-fuerte); border-top:3px solid transparent; background:var(--panel); font-weight:700; font-size:1.02rem; color:var(--vino); }
 .chip.activo{ background:var(--vino); color:#fff; border-color:var(--vino); }
 
 /* ---------- POS: fichas de producto ---------- */
@@ -117,7 +126,7 @@ h3{ font-size:1.05rem; font-weight:700; }
 .ficha{
   position:relative; min-height:120px; border-radius:var(--r);
   border:1px solid var(--borde-fuerte); background:var(--panel);
-  box-shadow:var(--sombra); padding:14px; text-align:left;
+  box-shadow:var(--sombra-1); padding:14px; text-align:left;
   display:flex; flex-direction:column; justify-content:space-between;
   font-family:inherit;
 }
@@ -127,6 +136,18 @@ h3{ font-size:1.05rem; font-weight:700; }
 .ficha-precio{ color:var(--vino); font-weight:700; font-size:.98rem; }
 .ficha-stock{ font-size:.82rem; color:var(--tinta-suave); margin-top:2px; }
 .ficha-stock.bajo{ color:var(--tomate); font-weight:700; }
+.ficha-badge{
+  position:absolute; top:-8px; right:-8px; min-width:26px; height:26px; padding:0 6px;
+  border-radius:20px; background:var(--masa); color:#fff; font-weight:800; font-size:.85rem;
+  display:flex; align-items:center; justify-content:center; box-shadow:var(--sombra-1);
+}
+.ficha-mas{
+  position:absolute; top:6px; right:6px; width:30px; height:30px; border-radius:8px;
+  border:1px solid var(--borde-fuerte); background:var(--panel); color:var(--tinta-suave);
+  font-weight:800; font-size:1.1rem; display:flex; align-items:center; justify-content:center;
+}
+@keyframes fichaPulso{ 0%{ transform:scale(1); } 40%{ transform:scale(1.04); } 100%{ transform:scale(1); } }
+.ficha-pulso{ animation:fichaPulso .2s ease-out; }
 
 /* Ticket */
 .ticket{ position:sticky; top:20px; background:var(--panel); border:1px solid var(--borde); border-radius:var(--r); box-shadow:var(--sombra); display:flex; flex-direction:column; max-height:calc(100vh - 40px); }
@@ -186,7 +207,7 @@ input:focus,select:focus,textarea:focus{ outline:3px solid #1F4D3466; border-col
 /* ---------- Modal ---------- */
 #modal-root:empty{ display:none; }
 .modal-fondo{ position:fixed; inset:0; background:rgba(26,26,26,.5); display:flex; align-items:flex-end; justify-content:center; padding:0; z-index:50; }
-.modal{ background:var(--panel); width:100%; max-width:560px; border-radius:20px 20px 0 0; padding:20px; max-height:92vh; overflow:auto; box-shadow:0 -8px 30px rgba(0,0,0,.25); }
+.modal{ background:var(--panel); width:100%; max-width:560px; border-radius:20px 20px 0 0; padding:20px; max-height:92vh; overflow:auto; box-shadow:var(--sombra-3); }
 .modal h2{ margin-top:0; }
 .modal-acciones{ display:flex; gap:12px; margin-top:18px; }
 .modal-acciones .btn{ flex:1; }
@@ -194,6 +215,8 @@ input:focus,select:focus,textarea:focus{ outline:3px solid #1F4D3466; border-col
   .modal-fondo{ align-items:center; padding:20px; }
   .modal{ border-radius:20px; }
 }
+.modal-fondo.chico{ align-items:center; padding:20px; }
+.modal-fondo.chico .modal{ border-radius:20px; max-width:360px; }
 
 /* ---------- Toast ---------- */
 #toast-root{ position:fixed; left:0; right:0; bottom:20px; display:flex; flex-direction:column; align-items:center; gap:10px; z-index:80; pointer-events:none; }
