@@ -61,17 +61,18 @@ app.delete('/api/usuarios/:id', requireAdmin, h((req, res) => {
 // =====================================================================
 // CONFIG / AJUSTES
 // =====================================================================
+const CONFIG_PUBLICA = ['nombre_negocio', 'costo_hora', 'saldo_inicial_caja', 'moneda'];
+
 app.get('/api/config', h((req, res) => {
   const rows = db.prepare('SELECT clave, valor FROM config').all();
   const out = {};
-  for (const r of rows) out[r.clave] = r.valor;
+  for (const r of rows) if (CONFIG_PUBLICA.includes(r.clave)) out[r.clave] = r.valor;
   out._driver = D.driver;
   res.json(out);
 }));
 
 app.put('/api/config', h((req, res) => {
-  const permitidas = ['nombre_negocio', 'costo_hora', 'saldo_inicial_caja', 'moneda'];
-  for (const k of permitidas) {
+  for (const k of CONFIG_PUBLICA) {
     if (req.body[k] !== undefined) D.setConfig(k, req.body[k]);
   }
   res.json({ ok: true });
@@ -394,6 +395,96 @@ app.post('/api/produccion', h((req, res) => {
   catch (e) { db.exec('ROLLBACK'); throw e; }
 
   res.json({ id: nuevoId, minutos, faltantes });
+}));
+
+// =====================================================================
+// PEDIDOS  (Fase 2 - agente de WhatsApp: toma el pedido y lo posta acá;
+// el personal lo ve y avanza el estado. No descuenta stock solo - ver
+// docs/superpowers/specs/2026-07-25-pedidos-whatsapp-design.md)
+// =====================================================================
+const ESTADOS_PEDIDO = ['nuevo', 'en_preparacion', 'listo', 'entregado', 'cancelado'];
+
+app.get('/api/pedidos', h((req, res) => {
+  const s = suc(req);
+  let sql = 'SELECT * FROM pedido WHERE sucursal_id = ?';
+  const args = [s];
+  if (req.query.estado) { sql += ' AND estado = ?'; args.push(req.query.estado); }
+  if (req.query.desde) { sql += ' AND fecha >= ?'; args.push(req.query.desde); }
+  if (req.query.hasta) { sql += ' AND fecha <= ?'; args.push(req.query.hasta + ' 23:59:59'); }
+  sql += ' ORDER BY fecha DESC LIMIT 200';
+  const pedidos = db.prepare(sql).all(...args);
+  const itemsStmt = db.prepare('SELECT * FROM pedido_item WHERE pedido_id = ?');
+  for (const p of pedidos) p.items = itemsStmt.all(p.id);
+  res.json(pedidos);
+}));
+
+app.post('/api/pedidos', h((req, res) => {
+  const items = Array.isArray(req.body.items) ? req.body.items : [];
+  if (!items.length) throw new Error('El pedido no tiene items');
+  const clienteTelefono = (req.body.cliente_telefono || '').trim();
+  if (!clienteTelefono) throw new Error('Falta el teléfono del cliente');
+  const clienteNombre = (req.body.cliente_nombre || '').trim() || null;
+  const notas = (req.body.notas || '').trim() || null;
+  const fecha = req.body.fecha || D.ahoraAR();
+  const s = suc(req);
+
+  // Aviso (no bloquea) si algún ingrediente/producto referenciado en el detalle no alcanza
+  const faltantes = [];
+  for (const it of items) {
+    for (const d of Array.isArray(it.detalle) ? it.detalle : []) {
+      if (!d.producto_id) continue;
+      const prod = db.prepare('SELECT nombre, stock FROM producto WHERE id = ?').get(+d.producto_id);
+      const necesita = num(d.cantidad_base);
+      if (prod && prod.stock < necesita) {
+        faltantes.push({ nombre: prod.nombre, falta: D.round2(necesita - prod.stock) });
+      }
+    }
+  }
+
+  const total = D.round2(items.reduce((a, it) => a + num(it.importe), 0));
+
+  db.exec('BEGIN');
+  let pedidoId;
+  try {
+    const r = db.prepare(
+      'INSERT INTO pedido (sucursal_id, fecha, cliente_telefono, cliente_nombre, notas, total) VALUES (?,?,?,?,?,?)'
+    ).run(s, fecha, clienteTelefono, clienteNombre, notas, total);
+    pedidoId = lastId(r);
+    const insItem = db.prepare('INSERT INTO pedido_item (pedido_id, descripcion, detalle, importe) VALUES (?,?,?,?)');
+    for (const it of items) {
+      const descripcion = (it.descripcion || '').trim();
+      if (!descripcion) throw new Error('Cada item necesita una descripción');
+      insItem.run(pedidoId, descripcion, JSON.stringify(it.detalle || []), D.round2(num(it.importe)));
+    }
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
+
+  res.json({ id: pedidoId, total, faltantes });
+}));
+
+app.put('/api/pedidos/:id/estado', h((req, res) => {
+  const id = +req.params.id;
+  const pedido = db.prepare('SELECT * FROM pedido WHERE id = ?').get(id);
+  if (!pedido) throw new Error('Pedido no encontrado');
+  const estado = req.body.estado;
+  if (!ESTADOS_PEDIDO.includes(estado)) throw new Error('Estado no válido');
+  const fechaEntregado = estado === 'entregado' ? (req.body.fecha || D.ahoraAR()) : pedido.fecha_entregado;
+  db.prepare('UPDATE pedido SET estado = ?, fecha_entregado = ? WHERE id = ?').run(estado, fechaEntregado, id);
+  res.json(db.prepare('SELECT * FROM pedido WHERE id = ?').get(id));
+}));
+
+// Productos activos agrupados por categoría, con stock y precio - para que
+// el agente de WhatsApp sepa qué ofrecer al armar una porción.
+app.get('/api/pedidos/porciones/opciones', h((req, res) => {
+  const s = suc(req);
+  const productos = db.prepare(
+    'SELECT id, nombre, categoria, unidad_stock, stock, precio_unidad, precio_docena, precio_kg FROM producto WHERE sucursal_id = ? AND activo = 1 ORDER BY categoria, nombre'
+  ).all(s);
+  const porCategoria = {};
+  for (const p of productos) {
+    (porCategoria[p.categoria] || (porCategoria[p.categoria] = [])).push(p);
+  }
+  res.json(porCategoria);
 }));
 
 // =====================================================================
