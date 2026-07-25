@@ -19,8 +19,11 @@
   .portada .dato a{ color:var(--tinta); }
   .portada .ingreso{ margin-top:34px; }
   .portada .ingreso a{ color:var(--tinta-suave); font-weight:600; font-size:.95rem; text-decoration:underline; }
-  .portada .cta-pedido{ margin:28px 0; }
+  .portada .cta-pedido{ margin:28px 0; display:flex; align-items:center; gap:16px; text-align:left; }
+  .portada .cta-pedido .mascota{ width:84px; height:84px; object-fit:contain; flex:0 0 auto; }
+  .portada .cta-pedido .btn{ flex:1 1 auto; }
   .portada .catalogo-titulo{ text-align:left; margin:36px 0 14px; }
+  .portada input[type="search"]{ margin-bottom:16px; }
 </style>
 </head>
 <body>
@@ -49,6 +52,7 @@
     </div>
 
     <div class="cta-pedido">
+      <img class="mascota" src="/img/mascota.png" alt="Mascota de El Sastre De La Pasta">
       <a class="btn btn-verde btn-grande btn-bloque"
          href="https://wa.me/5493444525595?text=Hola!%20Quiero%20hacer%20un%20pedido"
          target="_blank" rel="noopener">🍝 Hacé tu pedido por WhatsApp</a>
@@ -61,6 +65,8 @@
       <a href="/login.html">Ingresar (administradores y empleados)</a>
     </div>
   </div>
+  <div id="modal-root"></div>
+  <div id="toast-root" aria-live="polite"></div>
   <script type="module" src="/js/portada.js"></script>
 </body>
 </html>

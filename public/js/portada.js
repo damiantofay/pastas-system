@@ -1,14 +1,18 @@
-import { el, clear, colorCategoria } from './ui.js';
+import { el, clear, money, colorCategoria, modal, cerrarModal } from './ui.js';
+
+const WHATSAPP = '5493444525595';
 
 let productos = [];
 let categoriaActiva = 'Todos';
+let busqueda = '';
+let carrito = []; // { key, nombre, modo, cantidad, importe }
 
 async function cargar() {
   const cont = document.getElementById('catalogo');
   try {
     const res = await fetch('/api/publico/productos');
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    productos = await res.json();
+    productos = (await res.json()).map((p, i) => ({ ...p, key: i }));
     render();
   } catch (e) {
     clear(cont).appendChild(
@@ -16,6 +20,22 @@ async function cargar() {
     );
   }
 }
+
+// --- Precio / modos, mismo criterio que vender.js ---
+function modosDe(p) {
+  const m = [];
+  if (p.vendeUnidad) m.push('unidad');
+  if (p.vendeKg) m.push('kg');
+  if (p.vendeDocena) m.push('docena');
+  return m;
+}
+function precioUnitario(p, modo) {
+  if (modo === 'unidad') return p.precioUnidad || 0;
+  if (modo === 'kg') return p.precioKg || 0;
+  if (modo === 'docena') return p.precioDocena || 0;
+  return 0;
+}
+const ETIQUETA_MODO = { unidad: 'Unidad', kg: 'Por kilo', docena: 'Docena' };
 
 function render() {
   const cont = document.getElementById('catalogo');
@@ -28,23 +48,102 @@ function render() {
     })
   ));
 
-  const lista = productos.filter((p) => categoriaActiva === 'Todos' || p.categoria === categoriaActiva);
+  const buscador = el('input', {
+    type: 'search', placeholder: 'Buscar producto…', value: busqueda,
+    oninput: (e) => { busqueda = e.target.value; render(); }
+  });
+
+  const term = busqueda.trim().toLowerCase();
+  const lista = productos.filter((p) =>
+    (categoriaActiva === 'Todos' || p.categoria === categoriaActiva) &&
+    (!term || p.nombre.toLowerCase().includes(term))
+  );
   const fichas = el('div', { class: 'fichas' }, lista.map((p) => ficha(p)));
 
   clear(cont).appendChild(el('div', {}, [
+    buscador,
     chips,
-    lista.length ? fichas : el('div', { class: 'vacio' }, ['No hay productos en esta categoría.'])
+    lista.length ? fichas : el('div', { class: 'vacio' }, ['No hay productos en esta categoría.']),
+    carritoPanel()
   ]));
 }
 
 function ficha(p) {
-  return el('div', { class: 'ficha' }, [
+  const modos = modosDe(p);
+  return el('button', {
+    class: 'ficha', disabled: (!p.disponible || !modos.length) ? '' : null,
+    onClick: () => modos.length ? abrirAgregar(p, modos) : null
+  }, [
     el('span', { class: 'ficha-cat', style: { background: colorCategoria(p.categoria) } }),
     el('div', { class: 'ficha-nombre', text: p.nombre }),
     el('div', {}, [
       el('div', { class: 'ficha-precio', text: p.precioTexto || 'Sin precio' }),
       p.disponible ? null : el('div', { class: 'ficha-stock bajo', text: 'Sin stock' })
     ])
+  ]);
+}
+
+function abrirAgregar(p, modos) {
+  if (modos.length === 1) return pedirCantidad(p, modos[0]);
+  modal({
+    title: p.nombre,
+    body: el('div', {}, [el('p', { text: '¿Cómo lo pedís?' }), el('div', { class: 'modo-botones' }, modos.map((m) =>
+      el('button', { class: 'btn btn-primario btn-grande', text: ETIQUETA_MODO[m], onClick: () => { cerrarModal(); pedirCantidad(p, m); } })
+    ))]),
+    actions: [el('button', { class: 'btn btn-fantasma', text: 'Cancelar', onClick: cerrarModal })]
+  });
+}
+
+function pedirCantidad(p, modo) {
+  const existente = carrito.find((it) => it.key === p.key && it.modo === modo);
+  const cantidad = (existente ? existente.cantidad : 0) + 1;
+  agregarAlCarrito(p, modo, cantidad);
+}
+
+function agregarAlCarrito(p, modo, cantidad) {
+  const importe = precioUnitario(p, modo) * cantidad;
+  const existente = carrito.find((it) => it.key === p.key && it.modo === modo);
+  if (existente) { existente.cantidad = cantidad; existente.importe = importe; }
+  else carrito.push({ key: p.key, nombre: p.nombre, modo, cantidad, importe });
+  render();
+}
+
+function quitarDelCarrito(key, modo) {
+  carrito = carrito.filter((it) => !(it.key === key && it.modo === modo));
+  render();
+}
+
+function detalleItem(it) {
+  if (it.modo === 'unidad') return `${it.cantidad} u`;
+  if (it.modo === 'docena') return `${it.cantidad} doc`;
+  if (it.modo === 'kg') return `${it.cantidad} kg`;
+  return '';
+}
+
+function mensajeWhatsapp() {
+  const lineas = carrito.map((it) => `• ${it.nombre} (${detalleItem(it)})`);
+  const total = carrito.reduce((a, it) => a + it.importe, 0);
+  const texto = carrito.length
+    ? `Hola! Quiero hacer este pedido:\n${lineas.join('\n')}\n\nTotal aprox: ${money(total)}`
+    : 'Hola! Quiero hacer un pedido';
+  return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`;
+}
+
+function carritoPanel() {
+  if (!carrito.length) return null;
+  const total = carrito.reduce((a, it) => a + it.importe, 0);
+  return el('div', { class: 'panel', style: { marginTop: '18px' } }, [
+    el('h2', { text: 'Tu pedido' }),
+    el('div', { class: 'ticket-items' }, carrito.map((it) => el('div', { class: 'titem' }, [
+      el('div', { class: 'titem-info' }, [
+        el('div', { class: 'titem-nombre', text: it.nombre }),
+        el('div', { class: 'titem-det', text: detalleItem(it) })
+      ]),
+      el('div', { class: 'titem-importe', text: money(it.importe) }),
+      el('button', { class: 'titem-quitar', text: '×', title: 'Quitar', onClick: () => quitarDelCarrito(it.key, it.modo) })
+    ]))),
+    el('div', { class: 'ticket-total' }, [el('span', { text: 'Total' }), el('span', { text: money(total) })]),
+    el('a', { class: 'btn btn-verde btn-grande btn-bloque', href: mensajeWhatsapp(), target: '_blank', rel: 'noopener', text: '🍝 Enviar pedido por WhatsApp' })
   ]);
 }
 

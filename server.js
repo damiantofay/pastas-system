@@ -57,8 +57,11 @@ const auth = require('./auth');
 const { requireAuth, requireAdmin } = auth.montar(app); // registra /api/login, /api/logout, /api/me
 
 // Catálogo público para la portada institucional (elsastredelapasta.com) — sin login,
-// expone solo lo necesario para mostrar precios en el sitio público. Nunca costos, ids,
-// receta ni stock exacto (ver docs/superpowers/specs/2026-07-22-catalogo-publico-portada-design.md).
+// expone solo lo necesario para mostrar precios y armar un pedido en el sitio público.
+// Nunca costos, ids, receta ni stock exacto (ver docs/superpowers/specs/2026-07-22-catalogo-publico-portada-design.md).
+// precio_unidad/kg/docena y los vende_* ya son visibles indirectamente vía precioTexto;
+// se exponen también en crudo para que el carrito de la portada pueda calcular el total
+// al combinar varios productos (ver docs/superpowers/specs/2026-07-25-carrito-portada-design.md).
 app.get('/api/publico/productos', h((req, res) => {
   const rows = db.prepare(
     `SELECT nombre, categoria, stock, precio_unidad, precio_docena, precio_kg, vende_unidad, vende_docena, vende_kg
@@ -68,7 +71,13 @@ app.get('/api/publico/productos', h((req, res) => {
     nombre: p.nombre,
     categoria: p.categoria,
     precioTexto: precioTextoDe(p),
-    disponible: p.stock > 0
+    disponible: p.stock > 0,
+    precioUnidad: p.vende_unidad ? p.precio_unidad : 0,
+    precioKg: p.vende_kg ? p.precio_kg : 0,
+    precioDocena: p.vende_docena ? p.precio_docena : 0,
+    vendeUnidad: !!p.vende_unidad,
+    vendeKg: !!p.vende_kg,
+    vendeDocena: !!p.vende_docena
   })));
 }));
 
