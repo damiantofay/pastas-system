@@ -5,6 +5,7 @@ import { vistaVender } from './vender.js';
 import { vistaCaja } from './caja.js';
 import { vistaProductos } from './productos.js';
 import { vistaStock } from './stock.js';
+import { vistaPedidos } from './pedidos.js';
 import { vistaGastos } from './gastos.js';
 import { vistaReportes } from './reportes.js';
 import { vistaAjustes } from './ajustes.js';
@@ -12,6 +13,7 @@ import { vistaAjustes } from './ajustes.js';
 const VISTAS = [
   { id: 'vender', label: 'Vender', icono: 'vender', fn: vistaVender },
   { id: 'caja', label: 'Caja', icono: 'caja', fn: vistaCaja },
+  { id: 'pedidos', label: 'Pedidos', icono: 'pedidos', fn: vistaPedidos },
   { id: 'stock', label: 'Stock', icono: 'stock', fn: vistaStock },
   { id: 'productos', label: 'Productos', icono: 'productos', fn: vistaProductos },
   { id: 'gastos', label: 'Gastos', icono: 'gastos', fn: vistaGastos },

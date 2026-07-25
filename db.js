@@ -198,6 +198,29 @@ function migrarEsquema() {
       pagado_con TEXT NOT NULL DEFAULT 'efectivo'
     )
   `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pedido (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sucursal_id INTEGER NOT NULL DEFAULT 1,
+      fecha TEXT NOT NULL,
+      cliente_telefono TEXT NOT NULL,
+      cliente_nombre TEXT,
+      estado TEXT NOT NULL DEFAULT 'nuevo', -- nuevo|en_preparacion|listo|entregado|cancelado
+      notas TEXT,
+      total REAL NOT NULL DEFAULT 0,
+      fecha_entregado TEXT
+    );
+    CREATE TABLE IF NOT EXISTS pedido_item (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      pedido_id INTEGER NOT NULL REFERENCES pedido(id) ON DELETE CASCADE,
+      descripcion TEXT NOT NULL,
+      detalle TEXT,
+      importe REAL NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_pedido_estado ON pedido(estado);
+    CREATE INDEX IF NOT EXISTS idx_pedido_fecha ON pedido(fecha);
+    CREATE INDEX IF NOT EXISTS idx_pitem_pedido ON pedido_item(pedido_id);
+  `);
 }
 
 // ---- Helpers de config ---------------------------------------------------
