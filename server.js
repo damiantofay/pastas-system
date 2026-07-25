@@ -26,6 +26,21 @@ const num = (v, def = 0) => {
 const bool01 = (v) => (v ? 1 : 0);
 const lastId = (r) => Number(r.lastInsertRowid);
 
+// Formato de dinero para respuestas públicas (mismo formato que public/js/ui.js money())
+function moneyServer(n) {
+  const v = Number(n) || 0;
+  return '$ ' + v.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+// Misma prioridad de precio que usa la ficha de producto en Vender (public/js/vender.js ficha()):
+// unidad > kg > docena. Devuelve null si el producto no tiene ningún precio cargado en esos modos.
+function precioTextoDe(p) {
+  if (p.vende_unidad && p.precio_unidad) return moneyServer(p.precio_unidad) + ' c/u';
+  if (p.vende_kg && p.precio_kg) return moneyServer(p.precio_kg) + ' /kg';
+  if (p.vende_docena && p.precio_docena) return moneyServer(p.precio_docena) + ' /doc';
+  return null;
+}
+
 // Envoltorio para que un error tire JSON claro en español
 const h = (fn) => (req, res) => {
   try { fn(req, res); }
@@ -40,6 +55,23 @@ const h = (fn) => (req, res) => {
 // =====================================================================
 const auth = require('./auth');
 const { requireAuth, requireAdmin } = auth.montar(app); // registra /api/login, /api/logout, /api/me
+
+// Catálogo público para la portada institucional (elsastredelapasta.com) — sin login,
+// expone solo lo necesario para mostrar precios en el sitio público. Nunca costos, ids,
+// receta ni stock exacto (ver docs/superpowers/specs/2026-07-22-catalogo-publico-portada-design.md).
+app.get('/api/publico/productos', h((req, res) => {
+  const rows = db.prepare(
+    `SELECT nombre, categoria, stock, precio_unidad, precio_docena, precio_kg, vende_unidad, vende_docena, vende_kg
+     FROM producto WHERE sucursal_id = 1 AND activo = 1 ORDER BY categoria, nombre`
+  ).all();
+  res.json(rows.map((p) => ({
+    nombre: p.nombre,
+    categoria: p.categoria,
+    precioTexto: precioTextoDe(p),
+    disponible: p.stock > 0
+  })));
+}));
+
 app.use('/api', requireAuth); // de acá para abajo, todo /api pide sesión
 
 // Gestión de usuarios (solo admin)
@@ -62,7 +94,8 @@ app.delete('/api/usuarios/:id', requireAdmin, h((req, res) => {
 // CONFIG / AJUSTES
 // =====================================================================
 app.get('/api/config', h((req, res) => {
-  const rows = db.prepare('SELECT clave, valor FROM config').all();
+  const permitidas = ['nombre_negocio', 'costo_hora', 'saldo_inicial_caja', 'moneda'];
+  const rows = db.prepare('SELECT clave, valor FROM config WHERE clave IN (' + permitidas.map(() => '?').join(',') + ')').all(...permitidas);
   const out = {};
   for (const r of rows) out[r.clave] = r.valor;
   out._driver = D.driver;
