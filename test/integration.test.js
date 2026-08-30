@@ -13,6 +13,14 @@ test('servidor aislado', async (t) => {
     const catalog = await fixture.request('/api/publico/productos');
     assert.equal(catalog.status, 200);
     assert.ok(Array.isArray(catalog.body));
+    assert.ok(catalog.body.length > 0);
+    const allowedCatalogKeys = [
+      'categoria', 'disponible', 'nombre', 'precioDocena', 'precioKg',
+      'precioTexto', 'precioUnidad', 'vendeDocena', 'vendeKg', 'vendeUnidad'
+    ];
+    for (const product of catalog.body) {
+      assert.deepEqual(Object.keys(product).sort(), allowedCatalogKeys);
+    }
     assert.equal((await fixture.request('/api/productos')).status, 401);
   });
 
@@ -76,6 +84,17 @@ test('servidor aislado', async (t) => {
       json: { estado: 'listo' }
     });
     assert.equal(ready.body.estado, 'listo');
+
+    const orders = await fixture.request('/api/pedidos');
+    assert.equal(orders.status, 200);
+    const returnedOrder = orders.body.find((candidate) => candidate.id === order.body.id);
+    assert.ok(returnedOrder);
+    assert.equal(returnedOrder.cliente_telefono, '11 5555 0101');
+    assert.equal(returnedOrder.estado, 'listo');
+    assert.equal(returnedOrder.total, 250);
+    assert.equal(returnedOrder.items.length, 1);
+    assert.equal(returnedOrder.items[0].descripcion, 'Pedido de prueba');
+    assert.equal(returnedOrder.items[0].importe, 250);
   });
 
 });
@@ -124,4 +143,27 @@ test('limpia el proceso y la base temporal si el inicio falla', async () => {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
   }
+});
+
+test('limita intentos de login por cliente detrás del proxy local', async (t) => {
+  const fixture = await startFixture();
+  t.after(() => fixture.stop());
+
+  async function loginFallido(ip) {
+    return fetch(fixture.baseUrl + '/api/login', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-forwarded-for': ip
+      },
+      body: JSON.stringify({ usuario: 'admin', contraseña: 'incorrecta' })
+    });
+  }
+
+  for (let intento = 0; intento < 5; intento += 1) {
+    assert.equal((await loginFallido('198.51.100.10')).status, 401);
+  }
+
+  assert.equal((await loginFallido('198.51.100.11')).status, 401);
+  assert.equal((await loginFallido('198.51.100.10')).status, 429);
 });

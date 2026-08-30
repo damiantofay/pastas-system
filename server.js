@@ -12,6 +12,7 @@ const { db } = D;
 const bwipjs = require('bwip-js');
 
 const app = express();
+app.set('trust proxy', 'loopback');
 app.disable('x-powered-by');
 app.use((req, res, next) => {
   res.set({
