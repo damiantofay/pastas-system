@@ -6,6 +6,9 @@ let productos = [];
 let categoriaActiva = 'Todos';
 let busqueda = '';
 let carrito = []; // { key, nombre, modo, cantidad, importe }
+let chipsCont;
+let resultadosCont;
+let carritoCont;
 
 async function cargar() {
   const cont = document.getElementById('catalogo');
@@ -39,20 +42,33 @@ const ETIQUETA_MODO = { unidad: 'Unidad', kg: 'Por kilo', docena: 'Docena' };
 
 function render() {
   const cont = document.getElementById('catalogo');
+  const buscador = el('input', {
+    type: 'search', placeholder: 'Buscar producto…', value: busqueda,
+    oninput: (e) => { busqueda = e.target.value; renderResultados(); }
+  });
+  chipsCont = el('div');
+  resultadosCont = el('div');
+  carritoCont = el('div');
+
+  clear(cont).appendChild(el('div', {}, [buscador, chipsCont, resultadosCont, carritoCont]));
+  renderChips();
+  renderResultados();
+  renderCarrito();
+}
+
+function renderChips() {
   const cats = ['Todos', ...new Set(productos.map((p) => p.categoria))];
   const chips = el('div', { class: 'chips' }, cats.map((c) =>
     el('button', {
       class: 'chip' + (c === categoriaActiva ? ' activo' : ''),
       text: c,
-      onClick: () => { categoriaActiva = c; render(); }
+      onClick: () => { categoriaActiva = c; renderChips(); renderResultados(); }
     })
   ));
+  clear(chipsCont).appendChild(chips);
+}
 
-  const buscador = el('input', {
-    type: 'search', placeholder: 'Buscar producto…', value: busqueda,
-    oninput: (e) => { busqueda = e.target.value; render(); }
-  });
-
+function renderResultados() {
   const term = busqueda.trim().toLowerCase();
   const lista = productos.filter((p) =>
     (categoriaActiva === 'Todos' || p.categoria === categoriaActiva) &&
@@ -60,12 +76,15 @@ function render() {
   );
   const fichas = el('div', { class: 'fichas' }, lista.map((p) => ficha(p)));
 
-  clear(cont).appendChild(el('div', {}, [
-    buscador,
-    chips,
-    lista.length ? fichas : el('div', { class: 'vacio' }, ['No hay productos en esta categoría.']),
-    carritoPanel()
-  ]));
+  clear(resultadosCont).appendChild(
+    lista.length ? fichas : el('div', { class: 'vacio' }, ['No hay productos en esta categoría.'])
+  );
+}
+
+function renderCarrito() {
+  clear(carritoCont);
+  const panel = carritoPanel();
+  if (panel) carritoCont.appendChild(panel);
 }
 
 function ficha(p) {
@@ -105,12 +124,12 @@ function agregarAlCarrito(p, modo, cantidad) {
   const existente = carrito.find((it) => it.key === p.key && it.modo === modo);
   if (existente) { existente.cantidad = cantidad; existente.importe = importe; }
   else carrito.push({ key: p.key, nombre: p.nombre, modo, cantidad, importe });
-  render();
+  renderCarrito();
 }
 
 function quitarDelCarrito(key, modo) {
   carrito = carrito.filter((it) => !(it.key === key && it.modo === modo));
-  render();
+  renderCarrito();
 }
 
 function detalleItem(it) {
