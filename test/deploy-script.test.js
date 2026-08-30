@@ -75,3 +75,19 @@ test('el dry-run valida la operación completa sin crear un release', () => {
     fs.rmSync(layout.root, { recursive: true, force: true });
   }
 });
+
+test('el dry-run acepta un enlace activo que apunta al release anterior', () => {
+  const layout = makeLayout();
+  try {
+    const previous = path.join(layout.releases, '20260829T120000Z-1234567');
+    fs.mkdirSync(previous);
+    fs.writeFileSync(path.join(previous, 'server.js'), "'use strict';\n");
+    fs.symlinkSync(previous, layout.active, process.platform === 'win32' ? 'junction' : 'dir');
+
+    const result = runScript(layout, ['--dry-run']);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /VALIDACIÓN OK/);
+  } finally {
+    fs.rmSync(layout.root, { recursive: true, force: true });
+  }
+});

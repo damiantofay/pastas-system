@@ -83,7 +83,8 @@ canonical_future() {
 
 SOURCE_DIR=$(canonical_future "$SOURCE_DIR" source)
 RELEASES_ROOT=$(canonical_future "$RELEASES_ROOT" releases-root)
-ACTIVE_LINK=$(canonical_future "$ACTIVE_LINK" active-link)
+[[ "$ACTIVE_LINK" = /* ]] || die 'active-link debe ser absoluto'
+ACTIVE_LINK=$(realpath -ms "$ACTIVE_LINK")
 DATA_DIR=$(canonical_future "$DATA_DIR" data-dir)
 BACKUP_DIR=$(canonical_future "$BACKUP_DIR" backup-dir)
 BACKUP_SCRIPT=$(canonical_future "$BACKUP_SCRIPT" backup-script)
