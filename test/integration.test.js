@@ -15,6 +15,24 @@ test('servidor aislado', async (t) => {
     assert.ok(Array.isArray(catalog.body));
     assert.equal((await fixture.request('/api/productos')).status, 401);
   });
+
+});
+
+test('encabezados de seguridad', async (t) => {
+  const fixture = await startFixture();
+  t.after(() => fixture.stop());
+
+  await t.test('aplica encabezados de seguridad a la portada', async () => {
+    const response = await fixture.request('/');
+
+    assert.equal(response.headers.get('strict-transport-security'), 'max-age=31536000; includeSubDomains');
+    assert.match(response.headers.get('content-security-policy'), /default-src 'self'/);
+    assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+    assert.equal(response.headers.get('x-frame-options'), 'DENY');
+    assert.equal(response.headers.get('referrer-policy'), 'strict-origin-when-cross-origin');
+    assert.equal(response.headers.get('permissions-policy'), 'camera=(), microphone=(), geolocation=()');
+    assert.equal(response.headers.has('x-powered-by'), false);
+  });
 });
 
 test('limpia el proceso y la base temporal si el inicio falla', async () => {
