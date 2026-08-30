@@ -74,6 +74,21 @@ function render(main) {
   ]));
 }
 
+function lineaUnidadDe(p) {
+  return carrito.find((it) => it.producto.id === p.id && it.modo === 'unidad');
+}
+
+function agregarUnidadRapida(p, main, fichaEl) {
+  const importeUnidad = precioPreview(p, 'unidad', 1, 0);
+  if (importeUnidad <= 0) { toast(`Falta el precio de "${p.nombre}"`, 'error'); return; }
+  const linea = lineaUnidadDe(p);
+  if (linea) { linea.cantidad += 1; linea.importe = precioPreview(p, 'unidad', linea.cantidad, 0); }
+  else carrito.push({ producto: p, modo: 'unidad', cantidad: 1, importe: importeUnidad });
+  if (fichaEl) { fichaEl.classList.remove('ficha-pulso'); void fichaEl.offsetWidth; fichaEl.classList.add('ficha-pulso'); }
+  render(main);
+  abrirTicketMobile();
+}
+
 function ficha(p, main) {
   const modos = modosDe(p);
   let precioTxt = '';
@@ -82,8 +97,17 @@ function ficha(p, main) {
   else if (p.vende_docena && p.precio_docena) precioTxt = money(p.precio_docena) + ' /doc';
 
   const bajo = p.stock <= 0;
-  return el('button', { class: 'ficha', onClick: () => abrirAgregar(p, main) }, [
+  const linea = lineaUnidadDe(p);
+  const nodo = el('button', {
+    class: 'ficha',
+    onClick: () => { if (p.vende_unidad) agregarUnidadRapida(p, main, nodo); else abrirAgregar(p, main); }
+  }, [
     el('span', { class: 'ficha-cat', style: { background: colorCategoria(p.categoria) } }),
+    linea ? el('span', { class: 'ficha-badge', text: '×' + numAR(linea.cantidad, 0) }) : null,
+    (modos.length > 1 && p.vende_unidad) ? el('button', {
+      class: 'ficha-mas', title: 'Más opciones', text: '⋯',
+      onClick: (e) => { e.stopPropagation(); abrirAgregar(p, main); }
+    }) : null,
     el('div', { class: 'ficha-nombre', text: p.nombre }),
     el('div', {}, [
       el('div', { class: 'ficha-precio', text: precioTxt || 'Sin precio' }),
@@ -91,6 +115,7 @@ function ficha(p, main) {
         `Stock: ${numAR(p.stock, p.unidad_stock === 'kg' ? 1 : 0)} ${p.unidad_stock === 'kg' ? 'kg' : 'u'}` })
     ])
   ]);
+  return nodo;
 }
 
 // --- Agregar producto al ticket ---
@@ -138,7 +163,9 @@ function pedirCantidad(p, modo, main) {
     const monto = esMonto ? n : 0;
     const importe = precioPreview(p, modo, cant, monto);
     if (importe <= 0) { toast(`Falta el precio de "${p.nombre}"`, 'error'); return; }
-    carrito.push({ producto: p, modo, cantidad: cant, importe });
+    const existente = !esMonto && carrito.find((it) => it.producto.id === p.id && it.modo === modo);
+    if (existente) { existente.cantidad = cant; existente.importe = importe; }
+    else carrito.push({ producto: p, modo, cantidad: cant, importe });
     cerrarModal();
     render(main);
     abrirTicketMobile();

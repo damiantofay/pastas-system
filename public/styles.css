@@ -117,7 +117,7 @@ h3{ font-size:1.05rem; font-weight:700; }
 
 /* ---------- Chips de categoría ---------- */
 .chips{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
-.chip{ min-height:52px; padding:0 20px; border-radius:30px; border:2px solid var(--borde-fuerte); border-top:3px solid transparent; background:var(--panel); font-weight:700; font-size:1.02rem; color:var(--vino); }
+.chip{ min-height:52px; padding:0 20px; border-radius:30px; border:2px solid var(--borde-fuerte); background:var(--panel); font-weight:700; font-size:1.02rem; color:var(--vino); }
 .chip.activo{ background:var(--vino); color:#fff; border-color:var(--vino); }
 
 /* ---------- POS: fichas de producto ---------- */
