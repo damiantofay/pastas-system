@@ -514,37 +514,42 @@ Sólo después de ambos controles y de una autorización explícita se ejecuta l
 misma orden sin los flags de validación. La rutina implementa los Steps 1–6 y
 sale al primer error; si ya cambió el enlace activo, revierte automáticamente.
 
-- [ ] **Step 1: Crear backup fresco**
+- [x] **Step 1: Crear backup fresco**
 
 Ejecutar `/home/claudeuser/backup-fabrica.sh`, archivar la fuente activa excluyendo `node_modules` y calcular SHA-256 de ambos artefactos.
 
-- [ ] **Step 2: Preparar release aislado**
+- [x] **Step 2: Preparar release aislado**
 
 Transferir el código verificado a un directorio nuevo, excluir `.git`, `node_modules`, `data` y archivos de herramientas locales; ejecutar `npm ci --omit=dev`.
 
-- [ ] **Step 3: Smoke remoto antes del cambio**
+- [x] **Step 3: Smoke remoto antes del cambio**
 
 Crear una copia SQLite mediante `better-sqlite3.backup()`, iniciar el release en `127.0.0.1:3100` con esa copia y comprobar portada `200`, catálogo `200`, privados `401` y encabezados.
 
-- [ ] **Step 4: Sustituir únicamente código**
+- [x] **Step 4: Sustituir únicamente código**
 
 Sin tocar `data/`, sincronizar los archivos del release a la carpeta activa, ejecutar `npm ci --omit=dev` y reiniciar `fabrica` con PM2 conservando `COOKIE_SEGURA=1`.
 
-- [ ] **Step 5: Verificar dominio oficial**
+- [x] **Step 5: Verificar dominio oficial**
 
 Comprobar:
 
-- `https://www.elsastredelapasta.com/` → `200`;
+- `https://elsastredelapasta.com/` → `200`;
 - `/api/publico/productos` → `200`;
 - `/api/productos` sin cookie → `401`;
 - seis encabezados de seguridad;
 - PM2 online y cero reinicios inestables;
 - `PRAGMA quick_check=ok` sobre la base operativa.
 
-- [ ] **Step 6: Rollback automático si falla**
+- [x] **Step 6: Rollback automático si falla**
 
 Ante cualquier fallo, restaurar el archivo de fuente creado en Step 1, reinstalar dependencias de esa versión, reiniciar PM2 y repetir los checks públicos.
 
-- [ ] **Step 7: Registrar el resultado**
+El rollback quedó armado y validado por pruebas, pero no fue necesario: todos
+los controles posteriores al cambio pasaron. El alias `www` se registró como
+pendiente porque no existe en el DNS autoritativo y el certificado actual cubre
+el dominio raíz.
+
+- [x] **Step 7: Registrar el resultado**
 
 Actualizar el contexto `ELSASTREDELAPASTA` en Obsidian con commit, pruebas, backup, despliegue o rollback, sin secretos ni datos comerciales.
