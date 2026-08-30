@@ -1,4 +1,5 @@
 'use strict';
+const fs = require('node:fs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { startFixture } = require('./helpers/app-fixture');
@@ -14,4 +15,33 @@ test('servidor aislado', async (t) => {
     assert.ok(Array.isArray(catalog.body));
     assert.equal((await fixture.request('/api/productos')).status, 401);
   });
+});
+
+test('limpia el proceso y la base temporal si el inicio falla', async () => {
+  let child;
+  let tempDir;
+  try {
+    await assert.rejects(
+      startFixture({
+        hooks: {
+          afterSpawn(context) {
+            child = context.child;
+            tempDir = context.tempDir;
+            throw new Error('fallo de inicio forzado');
+          }
+        }
+      }),
+      /fallo de inicio forzado/
+    );
+
+    assert.ok(child);
+    assert.ok(tempDir);
+    assert.equal(child.killed, true);
+    assert.equal(fs.existsSync(tempDir), false);
+  } finally {
+    if (tempDir && fs.existsSync(tempDir)) {
+      if (child?.exitCode == null) child.kill();
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  }
 });
