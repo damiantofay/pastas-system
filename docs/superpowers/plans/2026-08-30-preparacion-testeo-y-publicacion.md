@@ -473,7 +473,7 @@ git log --oneline origin/master..HEAD
 
 Corregir todos los hallazgos Critical e Important antes de publicar.
 
-- [ ] **Step 3: Publicar sin reescribir historia**
+- [x] **Step 3: Publicar sin reescribir historia**
 
 Run:
 
