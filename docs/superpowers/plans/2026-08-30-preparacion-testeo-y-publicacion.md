@@ -31,7 +31,7 @@
 - Consumes: parche binario `uncommitted-production.patch` del backup verificado.
 - Produces: commit que representa exactamente los dos cambios que ya ejecutaba producción.
 
-- [ ] **Step 1: Aplicar el parche recuperado en el worktree**
+- [x] **Step 1: Aplicar el parche recuperado en el worktree**
 
 Run:
 
@@ -42,7 +42,7 @@ git apply "C:\Users\damia\Sistemaya Backups\ELSASTREDELAPASTA\20260830T121103Z\u
 
 Expected: `public/js/vender.js` y `public/styles.css` modificados, sin otros archivos.
 
-- [ ] **Step 2: Verificar el parche contra la evidencia**
+- [x] **Step 2: Verificar el parche contra la evidencia**
 
 Run:
 
@@ -54,7 +54,7 @@ git diff --binary | git patch-id --stable
 
 Expected: dos archivos, 30 inserciones, 3 eliminaciones y ningún error de whitespace.
 
-- [ ] **Step 3: Validar sintaxis frontend**
+- [x] **Step 3: Validar sintaxis frontend**
 
 Run:
 
@@ -64,7 +64,7 @@ Get-Content public/js/vender.js -Raw | node --input-type=module --check
 
 Expected: exit 0.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add public/js/vender.js public/styles.css
@@ -82,7 +82,7 @@ git commit -m "feat: recuperar agregado rápido en ventas"
 - Produces: `startFixture()` que devuelve `{ baseUrl, request, login, stop }`.
 - `request(path, options)` devuelve `{ status, body, headers }` y conserva la cookie de sesión.
 
-- [ ] **Step 1: Crear el helper de servidor real**
+- [x] **Step 1: Crear el helper de servidor real**
 
 `test/helpers/app-fixture.js` debe:
 
@@ -177,7 +177,7 @@ async function startFixture() {
 module.exports = { startFixture };
 ```
 
-- [ ] **Step 2: Crear una primera prueba de contrato existente**
+- [x] **Step 2: Crear una primera prueba de contrato existente**
 
 `test/integration.test.js`:
 
@@ -201,13 +201,13 @@ test('servidor aislado', async (t) => {
 });
 ```
 
-- [ ] **Step 3: Ejecutar la prueba**
+- [x] **Step 3: Ejecutar la prueba**
 
 Run: `node --test --test-concurrency=1 test/integration.test.js`
 
 Expected: PASS; es una prueba de caracterización de comportamiento recuperado.
 
-- [ ] **Step 4: Agregar scripts npm**
+- [x] **Step 4: Agregar scripts npm**
 
 `package.json`:
 
@@ -221,7 +221,7 @@ Expected: PASS; es una prueba de caracterización de comportamiento recuperado.
 }
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add package.json test/helpers/app-fixture.js test/integration.test.js
@@ -237,7 +237,7 @@ git commit -m "test: agregar arnés HTTP con base aislada"
 **Interfaces:**
 - Produces: respuestas HTTP con seis encabezados de seguridad y sin `X-Powered-By`.
 
-- [ ] **Step 1: Escribir la prueba que falla**
+- [x] **Step 1: Escribir la prueba que falla**
 
 Agregar un subtest que haga `GET /` y compare literalmente:
 
@@ -251,13 +251,13 @@ assert.equal(response.headers.get('permissions-policy'), 'camera=(), microphone=
 assert.equal(response.headers.has('x-powered-by'), false);
 ```
 
-- [ ] **Step 2: Verificar RED**
+- [x] **Step 2: Verificar RED**
 
 Run: `npm test -- --test-name-pattern="encabezados"`
 
 Expected: FAIL porque los encabezados todavía no existen.
 
-- [ ] **Step 3: Implementar el middleware mínimo**
+- [x] **Step 3: Implementar el middleware mínimo**
 
 Después de crear `app` en `server.js`:
 
@@ -276,13 +276,13 @@ app.use((req, res, next) => {
 });
 ```
 
-- [ ] **Step 4: Verificar GREEN**
+- [x] **Step 4: Verificar GREEN**
 
 Run: `npm test -- --test-name-pattern="encabezados"`
 
 Expected: PASS.
 
-- [ ] **Step 5: Ejecutar toda la suite y commit**
+- [x] **Step 5: Ejecutar toda la suite y commit**
 
 ```powershell
 npm test
@@ -299,7 +299,7 @@ git commit -m "security: agregar encabezados HTTP básicos"
 - Consumes: fixture y cliente autenticado de Task 2.
 - Produces: cobertura integrada de autenticación, configuración, productos, ventas, caja y pedidos.
 
-- [ ] **Step 1: Agregar autenticación y configuración**
+- [x] **Step 1: Agregar autenticación y configuración**
 
 Comprobar:
 
@@ -312,7 +312,7 @@ assert.equal(config.status, 200);
 assert.equal(Object.hasOwn(config.body, 'session_secret'), false);
 ```
 
-- [ ] **Step 2: Agregar producto, recepción, venta y rollback de stock**
+- [x] **Step 2: Agregar producto, recepción, venta y rollback de stock**
 
 Crear un producto de reventa a $50, recibir 10 unidades por $200, vender 2 en efectivo y comprobar literalmente:
 
@@ -324,7 +324,7 @@ assert.equal((await fixture.request('/api/ventas/' + sale.body.id, { method: 'DE
 assert.equal((await fixture.request('/api/productos/' + product.body.id)).body.stock, 10);
 ```
 
-- [ ] **Step 3: Agregar pedido y transición**
+- [x] **Step 3: Agregar pedido y transición**
 
 Crear un pedido con teléfono de prueba, un item de $250 y comprobar:
 
@@ -337,17 +337,17 @@ const ready = await fixture.request('/api/pedidos/' + order.body.id + '/estado',
 assert.equal(ready.body.estado, 'listo');
 ```
 
-- [ ] **Step 4: Ejecutar la suite**
+- [x] **Step 4: Ejecutar la suite**
 
 Run: `npm test`
 
 Expected: todos los subtests PASS y el directorio temporal eliminado.
 
-- [ ] **Step 5: Mutation check**
+- [x] **Step 5: Mutation check**
 
 Cambiar temporalmente en el worktree el cálculo de venta de unidad de multiplicación a suma, ejecutar el subtest de venta y observar FAIL; restaurar el archivo con `git restore server.js` únicamente después de confirmar la falla.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add test/integration.test.js
@@ -364,7 +364,7 @@ git commit -m "test: cubrir operaciones críticas del sistema"
 **Interfaces:**
 - Produces: `npm run test:syntax` portable y auditoría npm limpia.
 
-- [ ] **Step 1: Crear el verificador portable**
+- [x] **Step 1: Crear el verificador portable**
 
 `scripts/check-syntax.js`:
 
@@ -396,13 +396,13 @@ console.log(`Backend: ${backend.length}; frontend: ${frontend.length}; fallos: $
 process.exitCode = failures ? 1 : 0;
 ```
 
-- [ ] **Step 2: Ejecutar sintaxis**
+- [x] **Step 2: Ejecutar sintaxis**
 
 Run: `npm run test:syntax`
 
 Expected: 3 módulos backend y 13 frontend, 0 fallos.
 
-- [ ] **Step 3: Actualizar dependencias de forma compatible**
+- [x] **Step 3: Actualizar dependencias de forma compatible**
 
 Run:
 
@@ -415,7 +415,7 @@ npm run test:syntax
 
 Expected: auditoría con 0 vulnerabilidades y suite completa verde. Si npm exige `--force`, no aplicar el cambio.
 
-- [ ] **Step 4: Documentar testeo**
+- [x] **Step 4: Documentar testeo**
 
 Agregar a `README.md`:
 
@@ -432,7 +432,7 @@ npm audit
 Las pruebas crean una base temporal y nunca usan `data/fabrica.db`.
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add scripts/check-syntax.js package-lock.json README.md
@@ -478,21 +478,41 @@ Corregir todos los hallazgos Critical e Important antes de publicar.
 Run:
 
 ```powershell
-git push -u origin recovery/production-2026-08-30
+git push -u origin HEAD:recovery/production-2026-08-30
 ```
 
-Expected: rama creada en GitHub; ningún `--force`.
+Expected: el `HEAD` verificado crea o actualiza la rama remota; ningún `--force`.
 
 ### Task 7: Despliegue reversible en dominio oficial
 
 **Files:**
 - Server release directory outside Git: `/home/claudeuser/releases/fabrica-pastas/<timestamp>`
-- Active application: `/home/claudeuser/work/fabrica-pastas`
+- Legacy application / persistent data parent: `/home/claudeuser/work/fabrica-pastas`
+- Active release symlink: `/home/claudeuser/work/fabrica-pastas-current`
 - Persistent data: `/home/claudeuser/work/fabrica-pastas/data`
+- Executable routine: `scripts/deploy-production.sh`
 
 **Interfaces:**
 - Consumes: commit publicado y verificado.
 - Produces: PM2 `fabrica` online en el commit nuevo o rollback al release anterior.
+
+Antes de autorizar el despliegue real, transferir la fuente verificada a una
+ruta bajo `/home/claudeuser/incoming/` y ejecutar en el servidor:
+
+```bash
+scripts/deploy-production.sh \
+  --source /home/claudeuser/incoming/fabrica-pastas-<commit> \
+  --release-id <AAAAMMDDTHHMMSSZ>-<commit> \
+  --validate
+scripts/deploy-production.sh \
+  --source /home/claudeuser/incoming/fabrica-pastas-<commit> \
+  --release-id <AAAAMMDDTHHMMSSZ>-<commit> \
+  --dry-run
+```
+
+Sólo después de ambos controles y de una autorización explícita se ejecuta la
+misma orden sin los flags de validación. La rutina implementa los Steps 1–6 y
+sale al primer error; si ya cambió el enlace activo, revierte automáticamente.
 
 - [ ] **Step 1: Crear backup fresco**
 

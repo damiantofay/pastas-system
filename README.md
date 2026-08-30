@@ -207,6 +207,30 @@ npm audit
 
 Las pruebas crean una base temporal y nunca usan `data/fabrica.db`.
 
+### Despliegue reversible
+
+La rutina `scripts/deploy-production.sh` se ejecuta localmente en el servidor y
+requiere que la fuente verificada ya esté bajo `/home/claudeuser`. Antes de una
+publicación autorizada, validar el layout y revisar el plan sin efectos:
+
+```bash
+scripts/deploy-production.sh \
+  --source /home/claudeuser/incoming/fabrica-pastas-<commit> \
+  --release-id <AAAAMMDDTHHMMSSZ>-<commit> \
+  --validate
+
+scripts/deploy-production.sh \
+  --source /home/claudeuser/incoming/fabrica-pastas-<commit> \
+  --release-id <AAAAMMDDTHHMMSSZ>-<commit> \
+  --dry-run
+```
+
+Sin `--validate` ni `--dry-run`, la misma orden crea backups con hashes,
+prepara un release inmutable excluyendo `data/`, prueba una copia descartable
+de SQLite, cambia el enlace activo, verifica PM2/dominio/encabezados y ejecuta
+rollback automático si falla cualquier control. No ejecutar la orden real sin
+autorización explícita para desplegar.
+
 ---
 
 ## Fase 2 (pendiente, no incluido)
