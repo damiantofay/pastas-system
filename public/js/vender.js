@@ -78,14 +78,15 @@ function lineaUnidadDe(p) {
   return carrito.find((it) => it.producto.id === p.id && it.modo === 'unidad');
 }
 
-function agregarUnidadRapida(p, main, fichaEl) {
+function agregarUnidadRapida(p, main) {
   const importeUnidad = precioPreview(p, 'unidad', 1, 0);
   if (importeUnidad <= 0) { toast(`Falta el precio de "${p.nombre}"`, 'error'); return; }
   const linea = lineaUnidadDe(p);
   if (linea) { linea.cantidad += 1; linea.importe = precioPreview(p, 'unidad', linea.cantidad, 0); }
   else carrito.push({ producto: p, modo: 'unidad', cantidad: 1, importe: importeUnidad });
-  if (fichaEl) { fichaEl.classList.remove('ficha-pulso'); void fichaEl.offsetWidth; fichaEl.classList.add('ficha-pulso'); }
   render(main);
+  const fichaEl = main.querySelector(`[data-producto-id="${p.id}"]`);
+  if (fichaEl) fichaEl.classList.add('ficha-pulso');
   abrirTicketMobile();
 }
 
@@ -98,22 +99,27 @@ function ficha(p, main) {
 
   const bajo = p.stock <= 0;
   const linea = lineaUnidadDe(p);
-  const nodo = el('button', {
+  const nodo = el('div', {
     class: 'ficha',
-    onClick: () => { if (p.vende_unidad) agregarUnidadRapida(p, main, nodo); else abrirAgregar(p, main); }
+    dataset: { productoId: p.id }
   }, [
     el('span', { class: 'ficha-cat', style: { background: colorCategoria(p.categoria) } }),
     linea ? el('span', { class: 'ficha-badge', text: '×' + numAR(linea.cantidad, 0) }) : null,
+    el('button', {
+      class: 'ficha-principal',
+      onClick: () => { if (p.vende_unidad) agregarUnidadRapida(p, main); else abrirAgregar(p, main); }
+    }, [
+      el('div', { class: 'ficha-nombre', text: p.nombre }),
+      el('div', {}, [
+        el('div', { class: 'ficha-precio', text: precioTxt || 'Sin precio' }),
+        el('div', { class: 'ficha-stock' + (bajo ? ' bajo' : ''), text:
+          `Stock: ${numAR(p.stock, p.unidad_stock === 'kg' ? 1 : 0)} ${p.unidad_stock === 'kg' ? 'kg' : 'u'}` })
+      ])
+    ]),
     (modos.length > 1 && p.vende_unidad) ? el('button', {
       class: 'ficha-mas', title: 'Más opciones', text: '⋯',
       onClick: (e) => { e.stopPropagation(); abrirAgregar(p, main); }
-    }) : null,
-    el('div', { class: 'ficha-nombre', text: p.nombre }),
-    el('div', {}, [
-      el('div', { class: 'ficha-precio', text: precioTxt || 'Sin precio' }),
-      el('div', { class: 'ficha-stock' + (bajo ? ' bajo' : ''), text:
-        `Stock: ${numAR(p.stock, p.unidad_stock === 'kg' ? 1 : 0)} ${p.unidad_stock === 'kg' ? 'kg' : 'u'}` })
-    ])
+    }) : null
   ]);
   return nodo;
 }

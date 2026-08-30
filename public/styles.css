@@ -131,6 +131,7 @@ h3{ font-size:1.05rem; font-weight:700; }
   font-family:inherit;
 }
 .ficha:active{ transform:translateY(1px); }
+.ficha-principal{ border:0; background:transparent; padding:0; text-align:left; display:flex; flex-direction:column; justify-content:space-between; flex:1; font:inherit; color:inherit; cursor:pointer; }
 .ficha-nombre{ font-weight:800; font-size:1.08rem; color:var(--tinta); }
 .ficha-cat{ position:absolute; top:0; left:0; width:8px; height:100%; border-radius:var(--r) 0 0 var(--r); }
 .ficha-precio{ color:var(--vino); font-weight:700; font-size:.98rem; }
