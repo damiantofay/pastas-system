@@ -106,8 +106,8 @@ esac
 [[ -f "$SOURCE_DIR/package-lock.json" ]] || die 'source no contiene package-lock.json'
 [[ -f "$SOURCE_DIR/server.js" ]] || die 'source no contiene server.js'
 [[ -d "$DATA_DIR" ]] || die "data-dir no existe: $DATA_DIR"
-[[ -d "$RELEASES_ROOT" ]] || die "releases-root no existe: $RELEASES_ROOT"
-[[ -d "$BACKUP_DIR" ]] || die "backup-dir no existe: $BACKUP_DIR"
+[[ ! -e "$RELEASES_ROOT" || -d "$RELEASES_ROOT" ]] || die 'releases-root existe pero no es un directorio'
+[[ ! -e "$BACKUP_DIR" || -d "$BACKUP_DIR" ]] || die 'backup-dir existe pero no es un directorio'
 [[ ! -e "$ACTIVE_LINK" || -L "$ACTIVE_LINK" ]] || die 'active-link existe pero no es un symlink'
 
 RELEASE_DIR=$RELEASES_ROOT/$RELEASE_ID
@@ -126,6 +126,7 @@ if [[ "$MODE" == dry-run || "$MODE" == validate ]]; then
   exit 0
 fi
 
+mkdir -p "$RELEASES_ROOT" "$BACKUP_DIR"
 for command in realpath rsync curl node npm pm2 tar sha256sum; do
   command -v "$command" >/dev/null || die "falta comando requerido: $command"
 done

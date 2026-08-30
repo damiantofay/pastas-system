@@ -91,3 +91,18 @@ test('el dry-run acepta un enlace activo que apunta al release anterior', () => 
     fs.rmSync(layout.root, { recursive: true, force: true });
   }
 });
+
+test('el dry-run acepta directorios operativos todavía no creados sin crearlos', () => {
+  const layout = makeLayout();
+  try {
+    fs.rmSync(layout.releases, { recursive: true, force: true });
+    fs.rmSync(layout.backups, { recursive: true, force: true });
+
+    const result = runScript(layout, ['--dry-run']);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.equal(fs.existsSync(layout.releases), false);
+    assert.equal(fs.existsSync(layout.backups), false);
+  } finally {
+    fs.rmSync(layout.root, { recursive: true, force: true });
+  }
+});
