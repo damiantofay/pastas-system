@@ -9,6 +9,17 @@ const assert = require('node:assert/strict');
 const ROOT = path.resolve(__dirname, '..');
 const SCRIPT = path.join(ROOT, 'scripts', 'deploy-production.sh');
 
+test('el script de despliegue usa finales de línea LF compatibles con Linux', () => {
+  const source = fs.readFileSync(SCRIPT, 'utf8');
+  assert.equal(source.includes('\r'), false, 'el script contiene CRLF y Linux no puede ejecutarlo');
+  const attribute = spawnSync('git', ['check-attr', 'eol', '--', 'scripts/deploy-production.sh'], {
+    cwd: ROOT,
+    encoding: 'utf8'
+  });
+  assert.equal(attribute.status, 0, attribute.stderr);
+  assert.match(attribute.stdout, /eol: lf\s*$/);
+});
+
 function bashPath(windowsPath) {
   if (process.platform !== 'win32') return windowsPath;
   const converted = spawnSync('wsl.exe', ['wslpath', '-a', windowsPath.replaceAll('\\', '/')], { encoding: 'utf8' });
