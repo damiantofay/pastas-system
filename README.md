@@ -196,6 +196,19 @@ Para hacer un backup, copiá ese archivo a un pendrive o a la nube. (Si existen 
 
 ---
 
+## Verificación antes de publicar
+
+```bash
+npm ci
+npm test
+npm run test:syntax
+npm audit
+```
+
+Las pruebas crean una base temporal y nunca usan `data/fabrica.db`.
+
+---
+
 ## Fase 2 (pendiente, no incluido)
 
 Estos dos puntos se dejaron afuera a propósito porque dependen de servicios y aprobaciones externas, y no encajan con un sistema que arranca con un solo comando:
