@@ -447,7 +447,7 @@ git commit -m "chore: actualizar verificación y dependencias"
 **Interfaces:**
 - Produces: rama remota `recovery/production-2026-08-30` sin force push.
 
-- [ ] **Step 1: Verificación completa**
+- [x] **Step 1: Verificación completa**
 
 ```powershell
 npm ci
@@ -460,7 +460,7 @@ git status --short
 
 Expected: 0 fallos, auditoría limpia y worktree limpio.
 
-- [ ] **Step 2: Revisar el rango**
+- [x] **Step 2: Revisar el rango**
 
 Base: `origin/master`.
 
