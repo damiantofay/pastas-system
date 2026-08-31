@@ -3,68 +3,118 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#2E1F17">
+<meta name="theme-color" content="#203B2C">
 <title>El Sastre De La Pasta</title>
 <link rel="stylesheet" href="/styles.css">
-<style>
-  body{ min-height:100vh; }
-  .portada{ max-width:640px; margin:0 auto; padding:40px 20px 60px; text-align:center; }
-  .portada .logo{ width:180px; height:180px; object-fit:contain; margin:0 auto 10px; display:block; }
-  .portada h1{ margin-bottom:4px; }
-  .portada .rubro{ color:var(--tinta-suave); margin:0 0 28px; font-weight:600; }
-  .portada .panel{ text-align:left; }
-  .portada .dato{ display:flex; gap:12px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--borde); }
-  .portada .dato:last-child{ border-bottom:none; }
-  .portada .dato .et{ font-weight:700; color:var(--vino); min-width:110px; flex:0 0 110px; }
-  .portada .dato a{ color:var(--tinta); }
-  .portada .ingreso{ margin-top:34px; }
-  .portada .ingreso a{ color:var(--tinta-suave); font-weight:600; font-size:.95rem; text-decoration:underline; }
-  .portada .cta-pedido{ margin:28px 0; display:flex; align-items:center; gap:16px; text-align:left; }
-  .portada .cta-pedido .mascota{ width:84px; height:84px; object-fit:contain; flex:0 0 auto; }
-  .portada .cta-pedido .btn{ flex:1 1 auto; }
-  .portada .catalogo-titulo{ text-align:left; margin:36px 0 14px; }
-  .portada input[type="search"]{ margin-bottom:16px; }
-</style>
+<link rel="stylesheet" href="/portada.css">
 </head>
-<body>
-  <div class="portada">
-    <img class="logo" src="/img/logo.png" alt="El Sastre De La Pasta">
-    <h1>El Sastre De La Pasta</h1>
-    <p class="rubro">Fábrica de pastas artesanales</p>
-
-    <div class="panel">
-      <div class="dato">
-        <span class="et">Dirección</span>
-        <span>9 de Julio y Alfredo Palacios, Gualeguay, Entre Ríos</span>
-      </div>
-      <div class="dato">
-        <span class="et">Horarios</span>
-        <span>Martes a sábados: 9 a 13hs y 17 a 21hs<br>Domingos y feriados: 9 a 13hs</span>
-      </div>
-      <div class="dato">
-        <span class="et">WhatsApp</span>
-        <span><a href="https://wa.me/5493444525595" target="_blank" rel="noopener">+54 9 3444 52-5595</a></span>
-      </div>
-      <div class="dato">
-        <span class="et">Instagram</span>
-        <span><a href="https://instagram.com/elsastredelapasta" target="_blank" rel="noopener">@elsastredelapasta</a></span>
-      </div>
-    </div>
-
-    <div class="cta-pedido">
-      <img class="mascota" src="/img/mascota.png" alt="Mascota de El Sastre De La Pasta">
-      <a class="btn btn-verde btn-grande btn-bloque"
+<body class="storefront-page">
+  <header class="storefront-header">
+    <div class="storefront-container storefront-header__content">
+      <a class="storefront-brand" href="/" aria-label="El Sastre De La Pasta, inicio">
+        <img src="/img/logo.png" alt="" width="56" height="56">
+        <span>El Sastre<br>De La Pasta</span>
+      </a>
+      <nav class="storefront-nav" aria-label="Navegación principal">
+        <a href="#productos">Catálogo</a>
+        <a href="#informacion">Información</a>
+      </nav>
+      <a class="storefront-button storefront-button--small storefront-whatsapp"
          href="https://wa.me/5493444525595?text=Hola!%20Quiero%20hacer%20un%20pedido"
-         target="_blank" rel="noopener">🍝 Hacé tu pedido por WhatsApp</a>
+         target="_blank" rel="noopener">Pedir por WhatsApp</a>
     </div>
+  </header>
 
-    <h2 class="catalogo-titulo">Nuestros productos</h2>
-    <div id="catalogo"></div>
+  <main>
+    <section class="storefront-hero" aria-labelledby="portada-titulo">
+      <div class="storefront-container storefront-hero__content">
+        <div class="storefront-hero__copy">
+          <p class="storefront-eyebrow">Gualeguay, Entre Ríos</p>
+          <h1 id="portada-titulo">El Sastre De La Pasta</h1>
+          <p class="storefront-hero__lead">Fábrica de pastas artesanales.</p>
+          <dl class="storefront-hero__details">
+            <div>
+              <dt>Dirección</dt>
+              <dd>9 de Julio y Alfredo Palacios, Gualeguay, Entre Ríos</dd>
+            </div>
+            <div>
+              <dt>Horarios</dt>
+              <dd>Martes a sábados: 9 a 13hs y 17 a 21hs<br>Domingos y feriados: 9 a 13hs</dd>
+            </div>
+          </dl>
+          <div class="storefront-actions">
+            <a class="storefront-button storefront-button--secondary" href="#productos">Ver catálogo</a>
+            <a class="storefront-button storefront-whatsapp"
+               href="https://wa.me/5493444525595?text=Hola!%20Quiero%20hacer%20un%20pedido"
+               target="_blank" rel="noopener">Hacé tu pedido por WhatsApp</a>
+          </div>
+        </div>
+        <div class="storefront-hero__seal" aria-hidden="true">
+          <div class="storefront-hero__shape"></div>
+          <img src="/img/mascota.png" alt="">
+        </div>
+      </div>
+    </section>
 
-    <div class="ingreso">
-      <a href="/login.html">Ingresar (administradores y empleados)</a>
+    <section class="storefront-trust" aria-label="Datos principales">
+      <div class="storefront-container storefront-trust__grid">
+        <p><strong>Pastas artesanales</strong><span>El Sastre De La Pasta</span></p>
+        <p><strong>En Gualeguay</strong><span>Entre Ríos</span></p>
+        <p><strong>Pedidos por WhatsApp</strong><span>+54 9 3444 52-5595</span></p>
+      </div>
+    </section>
+
+    <section id="productos" class="storefront-section storefront-products" aria-labelledby="productos-titulo">
+      <div class="storefront-container">
+        <div class="storefront-section__heading">
+          <p class="storefront-eyebrow">Catálogo</p>
+          <h2 id="productos-titulo">Nuestros productos</h2>
+          <p>Consultá las opciones disponibles y armá tu pedido.</p>
+        </div>
+        <div id="catalogo" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="informacion" class="storefront-section storefront-information" aria-labelledby="informacion-titulo">
+      <div class="storefront-container storefront-information__layout">
+        <div class="storefront-section__heading">
+          <p class="storefront-eyebrow">Información</p>
+          <h2 id="informacion-titulo">Encontranos y escribinos</h2>
+          <p>Estamos en Gualeguay, Entre Ríos.</p>
+        </div>
+        <dl class="storefront-information__list">
+          <div>
+            <dt>Dirección</dt>
+            <dd>9 de Julio y Alfredo Palacios, Gualeguay, Entre Ríos</dd>
+          </div>
+          <div>
+            <dt>Horarios</dt>
+            <dd>Martes a sábados: 9 a 13hs y 17 a 21hs<br>Domingos y feriados: 9 a 13hs</dd>
+          </div>
+          <div>
+            <dt>WhatsApp</dt>
+            <dd><a class="storefront-whatsapp" href="https://wa.me/5493444525595" target="_blank" rel="noopener">+54 9 3444 52-5595</a></dd>
+          </div>
+          <div>
+            <dt>Instagram</dt>
+            <dd><a href="https://instagram.com/elsastredelapasta" target="_blank" rel="noopener">@elsastredelapasta</a></dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  </main>
+
+  <footer class="storefront-footer">
+    <div class="storefront-container storefront-footer__content">
+      <p>El Sastre De La Pasta</p>
+      <a href="/login.html">Acceso para personal</a>
     </div>
-  </div>
+  </footer>
+
+  <a class="storefront-mobile-cta storefront-whatsapp"
+     href="https://wa.me/5493444525595?text=Hola!%20Quiero%20hacer%20un%20pedido"
+     target="_blank" rel="noopener">Pedir por WhatsApp</a>
+
   <div id="modal-root"></div>
   <div id="toast-root" aria-live="polite"></div>
   <script type="module" src="/js/portada.js"></script>
