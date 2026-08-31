@@ -16,11 +16,13 @@ test('la portada pública ofrece el shell semántico y los accesos principales',
   assert.ok(document.querySelector('main'));
   assert.ok(document.querySelector('.storefront-hero'));
   assert.ok(document.querySelector('section#productos'));
+  assert.ok(document.querySelector('#productos #catalogo'));
   assert.ok(document.querySelector('section#informacion'));
   assert.ok(document.querySelector('footer'));
   assert.ok(document.querySelector('link[rel="stylesheet"][href="/portada.css"]'));
   assert.ok(document.querySelector('a.storefront-whatsapp[href^="https://wa.me/5493444525595"]'));
   assert.equal(document.querySelectorAll('a[href="/login.html"]').length, 1);
+  assert.ok(document.querySelector('script[type="module"][src="/js/portada.js"]'));
 
   dom.window.close();
 });

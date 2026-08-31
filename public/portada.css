@@ -6,7 +6,7 @@
   --storefront-muted: #6c6055;
   --storefront-green: #203b2c;
   --storefront-green-dark: #14281d;
-  --storefront-terracotta: #b7583d;
+  --storefront-terracotta: #a94731;
   --storefront-line: #dccfbe;
   --storefront-shadow: 0 14px 34px rgba(61, 43, 28, .1);
   background: var(--storefront-paper);
@@ -71,6 +71,15 @@
   font-size: .9rem;
   font-weight: 700;
   text-underline-offset: 4px;
+}
+
+.storefront-nav a,
+.storefront-information__list dd a,
+.storefront-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-block: 8px;
 }
 
 .storefront-button,
