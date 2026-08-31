@@ -31,20 +31,20 @@
 - Consumes: `#catalogo`, `/img/logo.png`, `/img/mascota.png` y `/js/portada.js`.
 - Produces: landmarks, anclas `#productos`/`#informacion`, CTA WhatsApp y clases `.storefront-*`.
 
-- [ ] **Step 1: Escribir la prueba estructural que falla**
+- [x] **Step 1: Escribir la prueba estructural que falla**
 
 Comprobar con JSDOM que existen `header`, `main`, hero, sección `#productos`, sección `#informacion`, `footer`, enlace a `portada.css`, CTA WhatsApp y un solo acceso interno.
 
-- [ ] **Step 2: Ejecutar RED**
+- [x] **Step 2: Ejecutar RED**
 
 Run: `node --test test/storefront-structure.test.js`  
 Expected: FAIL porque el shell actual no contiene esos landmarks.
 
-- [ ] **Step 3: Implementar HTML y CSS mínimos**
+- [x] **Step 3: Implementar HTML y CSS mínimos**
 
 Reescribir el shell público y crear el sistema visual responsive descrito en el spec, manteniendo exactamente los datos confirmados.
 
-- [ ] **Step 4: Ejecutar GREEN y commit**
+- [x] **Step 4: Ejecutar GREEN y commit**
 
 Run: `node --test test/storefront-structure.test.js`  
 Expected: PASS.
@@ -107,4 +107,3 @@ Publicar una rama sin force y ejecutar `scripts/deploy-production.sh` con backup
 - [ ] **Step 5: Registrar evidencia**
 
 Actualizar Obsidian en el contexto `ELSASTREDELAPASTA` y generalizar únicamente aprendizajes saneados.
-
