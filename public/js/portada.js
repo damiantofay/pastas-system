@@ -43,14 +43,24 @@ const ETIQUETA_MODO = { unidad: 'Unidad', kg: 'Por kilo', docena: 'Docena' };
 function render() {
   const cont = document.getElementById('catalogo');
   const buscador = el('input', {
-    type: 'search', placeholder: 'Buscar producto…', value: busqueda,
+    id: 'catalog-search', type: 'search', placeholder: 'Buscar producto…', value: busqueda,
     oninput: (e) => { busqueda = e.target.value; renderResultados(); }
   });
   chipsCont = el('div');
   resultadosCont = el('div');
   carritoCont = el('div');
 
-  clear(cont).appendChild(el('div', {}, [buscador, chipsCont, resultadosCont, carritoCont]));
+  clear(cont).appendChild(el('div', { class: 'catalog' }, [
+    el('div', { class: 'catalog-toolbar' }, [
+      el('div', { class: 'catalog-search' }, [
+        el('label', { for: 'catalog-search', text: 'Buscar productos' }),
+        buscador
+      ]),
+      chipsCont
+    ]),
+    resultadosCont,
+    carritoCont
+  ]));
   renderChips();
   renderResultados();
   renderCarrito();
@@ -74,7 +84,7 @@ function renderResultados() {
     (categoriaActiva === 'Todos' || p.categoria === categoriaActiva) &&
     (!term || p.nombre.toLowerCase().includes(term))
   );
-  const fichas = el('div', { class: 'fichas' }, lista.map((p) => ficha(p)));
+  const fichas = el('div', { class: 'product-grid' }, lista.map((p) => ficha(p)));
 
   clear(resultadosCont).appendChild(
     lista.length ? fichas : el('div', { class: 'vacio' }, ['No hay productos en esta categoría.'])
@@ -90,14 +100,17 @@ function renderCarrito() {
 function ficha(p) {
   const modos = modosDe(p);
   return el('button', {
-    class: 'ficha', disabled: (!p.disponible || !modos.length) ? '' : null,
+    class: 'product-card', disabled: (!p.disponible || !modos.length) ? '' : null,
     onClick: () => modos.length ? abrirAgregar(p, modos) : null
   }, [
-    el('span', { class: 'ficha-cat', style: { background: colorCategoria(p.categoria) } }),
-    el('div', { class: 'ficha-nombre', text: p.nombre }),
-    el('div', {}, [
-      el('div', { class: 'ficha-precio', text: p.precioTexto || 'Sin precio' }),
-      p.disponible ? null : el('div', { class: 'ficha-stock bajo', text: 'Sin stock' })
+    el('span', { class: 'product-card__accent', style: { background: colorCategoria(p.categoria) } }),
+    el('div', { class: 'product-card__content' }, [
+      el('span', { class: 'product-card__category', text: p.categoria }),
+      el('span', { class: 'product-card__name', text: p.nombre })
+    ]),
+    el('div', { class: 'product-card__meta' }, [
+      el('span', { class: 'product-card__price', text: p.precioTexto || 'Sin precio' }),
+      p.disponible ? null : el('span', { class: 'product-card__status', text: 'Agotado' })
     ])
   ]);
 }
@@ -151,7 +164,7 @@ function mensajeWhatsapp() {
 function carritoPanel() {
   if (!carrito.length) return null;
   const total = carrito.reduce((a, it) => a + it.importe, 0);
-  return el('div', { class: 'panel', style: { marginTop: '18px' } }, [
+  return el('div', { class: 'panel order-card' }, [
     el('h2', { text: 'Tu pedido' }),
     el('div', { class: 'ticket-items' }, carrito.map((it) => el('div', { class: 'titem' }, [
       el('div', { class: 'titem-info' }, [

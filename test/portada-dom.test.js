@@ -22,7 +22,7 @@ async function waitFor(predicate) {
   throw new Error('La portada no terminó de cargar dentro de 5 segundos');
 }
 
-test('buscar en el catálogo conserva el input enfocado y el caret', async (t) => {
+async function cargarPortada(t) {
   const fixture = await startFixture();
   const dom = new JSDOM('<div id="catalogo"></div><div id="modal-root"></div><div id="toast-root"></div>', {
     url: fixture.baseUrl + '/'
@@ -54,7 +54,37 @@ test('buscar en el catálogo conserva el input enfocado y el caret', async (t) =
     .replace("from './ui.js'", `from '${asDataModule(uiSource)}'`);
   await import(asDataModule(portadaSource) + '#' + Date.now());
 
+  return { dom };
+}
+
+test('el catálogo muestra controles y productos con estructura accesible', async (t) => {
+  await cargarPortada(t);
+
   const input = await waitFor(() => document.querySelector('#catalogo input[type="search"]'));
+  const searchLabel = document.querySelector('label[for="catalog-search"]');
+  assert.equal(searchLabel?.textContent, 'Buscar productos');
+  assert.equal(input.id, 'catalog-search');
+
+  const toolbar = document.querySelector('#catalogo .catalog-toolbar');
+  assert.ok(toolbar);
+  assert.ok(toolbar.querySelector('.chips'));
+
+  const grid = document.querySelector('#catalogo .product-grid');
+  assert.ok(grid);
+  const productCard = grid.querySelector('.product-card');
+  assert.ok(productCard);
+  assert.match(productCard.querySelector('.product-card__category').textContent, /\S/);
+
+  const soldOutStatus = grid.querySelector('.product-card[disabled] .product-card__status');
+  assert.ok(soldOutStatus);
+  assert.equal(soldOutStatus.textContent, 'Agotado');
+});
+
+test('buscar en el catálogo conserva el input enfocado y el caret', async (t) => {
+  const { dom } = await cargarPortada(t);
+
+  const input = await waitFor(() => document.querySelector('#catalogo input[type="search"]'));
+
   input.focus();
   input.value = 'rav';
   input.setSelectionRange(2, 2);
