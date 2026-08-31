@@ -71,6 +71,7 @@ function renderChips() {
   const chips = el('div', { class: 'chips' }, cats.map((c) =>
     el('button', {
       class: 'chip' + (c === categoriaActiva ? ' activo' : ''),
+      'aria-pressed': c === categoriaActiva ? 'true' : 'false',
       text: c,
       onClick: () => { categoriaActiva = c; renderChips(); renderResultados(); }
     })

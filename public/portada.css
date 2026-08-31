@@ -247,6 +247,7 @@
 .product-card:disabled { cursor: not-allowed; background: #f1e9de; }
 
 .order-card { margin-top: 4px; border-color: var(--storefront-line); background: var(--storefront-cream); box-shadow: var(--storefront-shadow); }
+.storefront-page .titem-quitar { width: 44px; height: 44px; }
 
 .storefront-information { background: var(--storefront-cream); }
 
