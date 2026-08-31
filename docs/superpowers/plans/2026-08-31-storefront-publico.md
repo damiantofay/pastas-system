@@ -100,10 +100,10 @@ Iniciar el fixture con SQLite descartable y verificar portada `200`, catálogo `
 
 Capturar escritorio y móvil, comprobar que no haya overflow, contenido duplicado, elementos cortados ni errores de consola.
 
-- [ ] **Step 4: Publicar y desplegar**
+- [x] **Step 4: Publicar y desplegar**
 
 Publicar una rama sin force y ejecutar `scripts/deploy-production.sh` con backup, smoke, release inmutable y rollback automático.
 
-- [ ] **Step 5: Registrar evidencia**
+- [x] **Step 5: Registrar evidencia**
 
 Actualizar Obsidian en el contexto `ELSASTREDELAPASTA` y generalizar únicamente aprendizajes saneados.
