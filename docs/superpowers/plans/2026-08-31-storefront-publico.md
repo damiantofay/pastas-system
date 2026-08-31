@@ -87,16 +87,16 @@ Expected: PASS.
 - Consumes: storefront completo.
 - Produces: evidencia de calidad local y visual lista para publicación.
 
-- [ ] **Step 1: Ejecutar gate completo**
+- [x] **Step 1: Ejecutar gate completo**
 
 Run: `npm test && npm run test:syntax && npm audit --audit-level=low && git diff --check`
 Expected: 0 fallos y 0 vulnerabilidades.
 
-- [ ] **Step 2: Ejecutar smoke local**
+- [x] **Step 2: Ejecutar smoke local**
 
 Iniciar el fixture con SQLite descartable y verificar portada `200`, catálogo `200` y APIs privadas `401`.
 
-- [ ] **Step 3: Revisar en navegador**
+- [x] **Step 3: Revisar en navegador**
 
 Capturar escritorio y móvil, comprobar que no haya overflow, contenido duplicado, elementos cortados ni errores de consola.
 
