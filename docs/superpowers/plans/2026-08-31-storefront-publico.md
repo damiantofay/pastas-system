@@ -60,20 +60,20 @@ Expected: PASS.
 - Consumes: respuesta real de `/api/publico/productos` y helpers de `ui.js`.
 - Produces: `.catalog-toolbar`, `.product-grid`, `.product-card`, `.product-card__status` y `.order-card` sin cambiar el contrato del API.
 
-- [ ] **Step 1: Agregar pruebas DOM que fallen**
+- [x] **Step 1: Agregar pruebas DOM que fallen**
 
 Verificar etiqueta accesible del buscador, estructura de toolbar/grilla, categoría visible, estado agotado, y preservación del foco/caret.
 
-- [ ] **Step 2: Ejecutar RED**
+- [x] **Step 2: Ejecutar RED**
 
 Run: `node --test --test-concurrency=1 test/portada-dom.test.js`  
 Expected: FAIL por ausencia de la nueva estructura.
 
-- [ ] **Step 3: Implementar renderer y estilos**
+- [x] **Step 3: Implementar renderer y estilos**
 
 Mantener las funciones de filtro, agregado, totales y WhatsApp; cambiar sólo el markup generado y sus clases.
 
-- [ ] **Step 4: Ejecutar GREEN y commit**
+- [x] **Step 4: Ejecutar GREEN y commit**
 
 Run: `node --test --test-concurrency=1 test/portada-dom.test.js`  
 Expected: PASS.
