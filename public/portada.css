@@ -107,7 +107,12 @@
   font-size: .78rem;
 }
 
-.storefront-button--secondary {
+.storefront-page a.storefront-button,
+.storefront-page a.storefront-mobile-cta {
+  color: #fff;
+}
+
+.storefront-page a.storefront-button--secondary {
   background: transparent;
   color: var(--storefront-green);
 }

@@ -1,7 +1,7 @@
 # Storefront público de El Sastre de la Pasta — Diseño
 
-**Fecha:** 2026-08-31  
-**Contexto:** `ELSASTREDELAPASTA`  
+**Fecha:** 2026-08-31
+**Contexto:** `ELSASTREDELAPASTA`
 **Estado:** aprobado por mandato de liderazgo autónomo del propietario
 
 ## Objetivo
@@ -60,4 +60,3 @@ Se conserva la API y el carrito existentes. El renderer agrega estructura semán
 - sintaxis completa y auditoría de dependencias;
 - screenshots reales en escritorio y móvil;
 - smoke local y, tras publicación, despliegue reversible con los controles existentes.
-

@@ -37,7 +37,7 @@ Comprobar con JSDOM que existen `header`, `main`, hero, sección `#productos`, s
 
 - [x] **Step 2: Ejecutar RED**
 
-Run: `node --test test/storefront-structure.test.js`  
+Run: `node --test test/storefront-structure.test.js`
 Expected: FAIL porque el shell actual no contiene esos landmarks.
 
 - [x] **Step 3: Implementar HTML y CSS mínimos**
@@ -46,7 +46,7 @@ Reescribir el shell público y crear el sistema visual responsive descrito en el
 
 - [x] **Step 4: Ejecutar GREEN y commit**
 
-Run: `node --test test/storefront-structure.test.js`  
+Run: `node --test test/storefront-structure.test.js`
 Expected: PASS.
 
 ### Task 2: Catálogo y carrito integrados al storefront
@@ -66,7 +66,7 @@ Verificar etiqueta accesible del buscador, estructura de toolbar/grilla, categor
 
 - [x] **Step 2: Ejecutar RED**
 
-Run: `node --test --test-concurrency=1 test/portada-dom.test.js`  
+Run: `node --test --test-concurrency=1 test/portada-dom.test.js`
 Expected: FAIL por ausencia de la nueva estructura.
 
 - [x] **Step 3: Implementar renderer y estilos**
@@ -75,7 +75,7 @@ Mantener las funciones de filtro, agregado, totales y WhatsApp; cambiar sólo el
 
 - [x] **Step 4: Ejecutar GREEN y commit**
 
-Run: `node --test --test-concurrency=1 test/portada-dom.test.js`  
+Run: `node --test --test-concurrency=1 test/portada-dom.test.js`
 Expected: PASS.
 
 ### Task 3: Gate completo y validación visual
@@ -89,7 +89,7 @@ Expected: PASS.
 
 - [ ] **Step 1: Ejecutar gate completo**
 
-Run: `npm test && npm run test:syntax && npm audit --audit-level=low && git diff --check`  
+Run: `npm test && npm run test:syntax && npm audit --audit-level=low && git diff --check`
 Expected: 0 fallos y 0 vulnerabilidades.
 
 - [ ] **Step 2: Ejecutar smoke local**
